@@ -138,7 +138,10 @@ main { min-height: 100vh; overflow: hidden; }
 .boundary-grid p { margin-top: 70px; font-size: clamp(18px, 2vw, 32px); line-height: 1.15; letter-spacing: -0.04em; }
 .boundary-center { background: var(--ink); color: var(--paper); }
 
-footer { min-height: 90px; padding: 20px 22px; display: flex; justify-content: space-between; background: var(--ink); color: var(--paper); font-size: 8px; }
+footer { min-height: 90px; padding: 20px 22px; display: flex; justify-content: space-between; gap: 30px; background: var(--ink); color: var(--paper); font-size: 8px; }
+footer > p:first-child { max-width: 690px; }
+footer a { color: var(--signal); text-decoration: none; border-bottom: 1px solid currentColor; }
+.credits { display: flex; gap: 8px; text-align: right; white-space: nowrap; }
 
 @media (max-width: 800px) {
   .masthead { grid-template-columns: 1fr auto; padding: 0 12px; font-size: 7px; }
@@ -156,4 +159,5 @@ footer { min-height: 90px; padding: 20px 22px; display: flex; justify-content: s
   .boundary-grid { grid-template-columns: 1fr; }
   .boundary-grid > div { min-height: 260px; border-right: 0; border-bottom: 1px solid var(--ink); }
   footer { flex-direction: column; }
+  .credits { text-align: left; white-space: normal; }
 }

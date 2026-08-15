@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Private Account for OnlyFans Creators / Working Prototype",
-  description: "Private income evidence and credit eligibility for OnlyFans creators.",
+  title: "Booty Bank / Working Prototype",
+  description: "The private money account and income-based credit concept for OnlyFans creators.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

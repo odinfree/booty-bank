@@ -16,14 +16,14 @@ export default function Home() {
   return (
     <main>
       <header className="masthead">
-        <div className="wordmark">PRIVATE CREATOR ACCOUNT</div>
+        <div className="wordmark">BOOTY BANK</div>
         <div className="status"><i /> WORKING PROTOTYPE / SAMPLE DATA</div>
         <div className="folio">01 / 05</div>
       </header>
 
       <section className="hero">
-        <p className="eyebrow">BUILT FOR ONLYFANS CREATORS</p>
-        <h1>ONLYFANS PAYOUTS.<br />ONE PRIVATE ACCOUNT.</h1>
+        <p className="eyebrow">THE MONEY ACCOUNT FOR ONLYFANS CREATORS</p>
+        <h1>BORROW AGAINST<br />YOUR BBL.</h1>
         <div className="hero-aside">
           <p>CONNECT YOUR PAYOUT HISTORY. USE IT FOR PRIVATE INCOME VERIFICATION AND LENDER REVIEW.</p>
           <button onClick={() => setConnected(!connected)}>
@@ -103,8 +103,14 @@ export default function Home() {
       </section>
 
       <footer>
-        <p>THIS DEMO DOES NOT OPEN A BANK ACCOUNT, ISSUE CREDIT, PROVIDE A CARD, OR OFFER INVESTMENTS. NOT AFFILIATED WITH ONLYFANS.</p>
-        <p>STARKNET / LOCAL PROTOTYPE / 2026</p>
+        <p>THIS DEMO DOES NOT OPEN A BANK ACCOUNT, ISSUE CREDIT, PROVIDE A CARD, OR OFFER INVESTMENTS. BOOTY BANK IS NOT A LICENSED BANK OR AFFILIATED WITH ONLYFANS.</p>
+        <p className="credits">
+          IDEA <a href="https://x.com/Metachaser24/status/2088277057457225901?s=20" target="_blank" rel="noreferrer">@METACHASER24</a>
+          <span>/</span>
+          SLOGAN <a href="https://x.com/NoRampLabs/status/2088575905962549667?s=20" target="_blank" rel="noreferrer">@NORAMPLABS</a>
+          <span>/</span>
+          FOUND VIA <a href="https://x.com/8am1am" target="_blank" rel="noreferrer">@8AM1AM</a>
+        </p>
       </footer>
     </main>
   );

@@ -1,6 +1,10 @@
-# Private Creator Account
+# Booty Bank
 
 A separate STRK20 prototype for OnlyFans income evidence and private credit eligibility. This repository does not replace or rewrite Mosby Pass.
+
+> BORROW AGAINST YOUR BBL.
+
+Booty Bank is a working product concept. It is not a licensed bank, is not affiliated with OnlyFans, and does not issue credit.
 
 ## What this proves
 
@@ -47,3 +51,9 @@ Before any banking or credit language leaves prototype status, obtain written co
 2. A consented data provider that confirms the required OnlyFans income fields.
 3. A licensed lender willing to underwrite a bounded pilot.
 4. Privacy and compliance counsel reviewing the end-to-end data flow.
+
+## Credits
+
+- OnlyFans neobank concept: [@Metachaser24](https://x.com/Metachaser24/status/2088277057457225901?s=20)
+- "Borrow against your BBL": [@NoRampLabs](https://x.com/NoRampLabs/status/2088575905962549667?s=20)
+- Brought to our attention by [@8am1am](https://x.com/8am1am)
