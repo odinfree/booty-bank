@@ -1,5 +1,5 @@
 const isPages = process.env.GITHUB_ACTIONS === "true";
-const repo = "creator-neobank";
+const repo = "booty-bank";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

@@ -1,5 +1,5 @@
 use pqbench_falcon_512::fixtures::{blake, shake};
-use private_creator_account::falcon_account::{
+use booty_bank::falcon_account::{
     IBootyFalconAccountDispatcher, IBootyFalconAccountDispatcherTrait, ISRC5_ID, ISRC6_ID,
 };
 use snforge_std::{

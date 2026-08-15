@@ -2,6 +2,15 @@
 version = 1
 
 [[package]]
+name = "booty_bank"
+version = "0.1.0"
+dependencies = [
+ "pqbench_falcon_512",
+ "pqbench_interface",
+ "snforge_std",
+]
+
+[[package]]
 name = "corelib_imports"
 version = "0.1.3"
 source = "registry+https://scarbs.xyz/"
@@ -28,15 +37,6 @@ version = "0.1.0"
 source = "git+https://github.com/OpenZeppelin/cairo-pq-verifiers?rev=bece5c07eeea5784e570c01108ec000d2d04ae40#bece5c07eeea5784e570c01108ec000d2d04ae40"
 dependencies = [
  "corelib_imports",
-]
-
-[[package]]
-name = "private_creator_account"
-version = "0.1.0"
-dependencies = [
- "pqbench_falcon_512",
- "pqbench_interface",
- "snforge_std",
 ]
 
 [[package]]

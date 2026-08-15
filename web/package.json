@@ -1,5 +1,5 @@
 {
-  "name": "private-creator-account-web",
+  "name": "booty-bank-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -22,4 +22,3 @@
   },
   "packageManager": "npm@11.8.0"
 }
-

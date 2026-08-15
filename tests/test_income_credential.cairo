@@ -1,5 +1,5 @@
-use private_creator_account::IncomeCredential::{CredentialPublished, Event, MAX_VALIDITY};
-use private_creator_account::{IIncomeCredentialDispatcher, IIncomeCredentialDispatcherTrait};
+use booty_bank::IncomeCredential::{CredentialPublished, Event, MAX_VALIDITY};
+use booty_bank::{IIncomeCredentialDispatcher, IIncomeCredentialDispatcherTrait};
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, EventSpyAssertionsTrait, declare, spy_events,
     start_cheat_block_timestamp, start_cheat_caller_address,
