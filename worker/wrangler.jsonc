@@ -3,10 +3,15 @@
   "name": "booty-bank-waitlist",
   "main": "src/index.mjs",
   "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "routes": [
     {
       "pattern": "bootybank.app/api/waitlist*",
+      "zone_name": "bootybank.app"
+    },
+    {
+      "pattern": "bootybank.app/api/wallet/*",
       "zone_name": "bootybank.app"
     },
     {

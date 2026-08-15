@@ -33,6 +33,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_PRIVY_APP_ID: ${{ vars.NEXT_PUBLIC_PRIVY_APP_ID }}
+      NEXT_PUBLIC_STARKNET_NETWORK: mainnet
     defaults:
       run:
         working-directory: web

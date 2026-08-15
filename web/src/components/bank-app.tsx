@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import StarknetWalletControl from "./starknet-wallet-control";
 
 type View = "home" | "payments" | "cards" | "plan" | "wealth" | "creator" | "privacy" | "more";
 type Action = "add" | "send" | "exchange" | "borrow" | null;
@@ -47,9 +48,8 @@ function AppHeader({ title, privateMode, setPrivateMode }: { title: string; priv
     <div className="app-view-head">
       <div><span>BOOTY / PERSONAL</span><h3>{title}</h3></div>
       <div className="app-head-actions">
+        <StarknetWalletControl />
         <button className={`privacy-pill ${privateMode ? "active" : ""}`} onClick={() => setPrivateMode(!privateMode)} aria-pressed={privateMode}>∅ {privateMode ? "PRIVATE" : "VISIBLE"}</button>
-        <button className="round-button" aria-label="Open notifications">2</button>
-        <button className="avatar-button" aria-label="Open profile">OF</button>
       </div>
     </div>
   );
@@ -86,7 +86,9 @@ export default function BankApp() {
     <section className="product-demo" id="app" aria-label="Interactive Booty Bank product demo">
       <div className="bank-shell">
         <aside className="bank-sidebar">
-          <a href="/" className="app-logo">BB</a>
+          <a href="/" className="app-logo" aria-label="Booty Bank home">
+            <img src="/brand/bootybank-mark.svg" alt="" width="34" height="34" />
+          </a>
           <nav aria-label="Bank application navigation">
             {nav.map((item) => (
               <button key={item.id} className={view === item.id || (item.id === "more" && ["plan", "wealth", "privacy"].includes(view)) ? "active" : ""} onClick={() => { setView(item.id); setAction(null); }}>

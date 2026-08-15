@@ -59,7 +59,8 @@ main { min-height: 100vh; overflow: hidden; }
   font-size: 10px;
   font-weight: 700;
 }
-.site-wordmark { font-size: 14px; letter-spacing: -.055em; text-decoration: none; }
+.site-wordmark { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; letter-spacing: -.055em; text-decoration: none; }
+.site-wordmark img { width: 20px; height: 20px; flex: none; }
 .site-header nav { display: flex; justify-content: center; gap: 30px; }
 .site-header nav a { text-decoration: none; }
 .site-header nav a:hover { color: var(--accent); }
@@ -83,8 +84,8 @@ main { min-height: 100vh; overflow: hidden; }
   margin: 0;
   text-align: center;
   font-size: clamp(112px, 17vw, 260px);
-  line-height: .82;
-  letter-spacing: -.06em;
+  line-height: .86;
+  letter-spacing: 0;
   font-weight: 700;
 }
 .hero-bottomline { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-top: 22px; border-top: 1px solid var(--line-light); }
@@ -139,10 +140,9 @@ main { min-height: 100vh; overflow: hidden; }
 .file-green { background: var(--green); }
 .file-purple { background: var(--purple); }
 .file-red { background: var(--red); color: var(--ink); }
-.file-waitlist { min-height: 600px; display: block; padding-top: 70px; padding-bottom: 28px; }
-.waitlist-dossier { min-height: 470px; display: grid; grid-template-columns: 1.1fr .9fr; align-items: end; gap: 60px; padding: 10px 4px; border-top: 1px solid rgba(23, 23, 23, .45); }
-.waitlist-dossier > div:first-child > span { font-size: 10px; font-weight: 700; }
-.waitlist-dossier h2 { margin: 130px 0 -.04em -.025em; font-size: clamp(100px, 13vw, 200px); line-height: .8; letter-spacing: -.06em; }
+.file-waitlist { min-height: 400px; display: block; padding-top: 54px; padding-bottom: 28px; }
+.waitlist-dossier { min-height: 285px; display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 60px; padding: 28px 4px 0; border-top: 1px solid rgba(23, 23, 23, .45); }
+.waitlist-dossier h2 { margin: 0; font-size: clamp(68px, 7vw, 112px); line-height: .88; letter-spacing: 0; }
 .dossier-form { align-self: end; padding: 0 0 8px 30px; border-left: 1px solid rgba(23, 23, 23, .45); }
 .dossier-form > label { display: block; margin-bottom: 10px; font-size: 10px; font-weight: 700; }
 .dossier-form > div:first-of-type { display: grid; grid-template-columns: 1fr auto; border: 1px solid var(--ink); }
@@ -178,7 +178,8 @@ main { min-height: 100vh; overflow: hidden; }
   border: 1px solid rgba(242, 239, 230, .35);
 }
 .bank-sidebar { position: relative; padding: 20px 14px; display: flex; flex-direction: column; border-right: 1px solid var(--line-light); background: var(--ink); color: var(--paper); }
-.app-logo { width: 48px; height: 48px; display: grid; place-items: center; margin: 0 6px 50px; color: var(--ink); background: var(--accent); text-decoration: none; font-size: 24px; font-weight: 700; letter-spacing: -.08em; }
+.app-logo { width: 48px; height: 48px; display: grid; place-items: center; margin: 0 6px 50px; color: var(--ink); background: var(--accent); text-decoration: none; }
+.app-logo img { width: 34px; height: 34px; }
 .bank-sidebar nav { display: flex; flex-direction: column; gap: 4px; }
 .bank-sidebar nav button { min-height: 45px; display: grid; grid-template-columns: 30px 1fr; align-items: center; border: 0; padding: 0 10px; color: rgba(242, 239, 230, .55); background: transparent; cursor: pointer; text-align: left; font-size: 10px; }
 .bank-sidebar nav button i { font-size: 15px; font-style: normal; }
@@ -193,6 +194,25 @@ main { min-height: 100vh; overflow: hidden; }
 .app-view-head > div:first-child span { display: block; margin-bottom: 5px; font-size: 9px; }
 .app-view-head h3 { margin: 0; font-size: 24px; letter-spacing: -.06em; }
 .app-head-actions { display: flex; align-items: center; gap: 8px; }
+.starknet-wallet-control { display: flex; align-items: center; gap: 6px; }
+.wallet-connect-block { position: relative; }
+.wallet-connect-button { min-height: 34px; border: 1px solid var(--ink); padding: 0 12px; color: var(--paper); background: var(--ink); cursor: pointer; font-size: 9px; font-weight: 700; }
+.wallet-connect-button:hover:not(:disabled) { color: var(--ink); background: var(--accent); }
+.wallet-connect-button:disabled { cursor: wait; opacity: .55; }
+.wallet-connect-button.privy-button { color: var(--ink); background: var(--accent); }
+.wallet-inline-error { position: absolute; z-index: 120; top: 40px; right: 0; width: 240px; border: 1px solid var(--ink); padding: 10px; color: var(--paper); background: var(--red); font-size: 9px; }
+.wallet-session { position: relative; display: flex; min-height: 34px; border: 1px solid var(--ink); background: var(--paper); }
+.wallet-session-main { min-width: 215px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; border: 0; padding: 0 10px; color: var(--ink); background: transparent; cursor: pointer; text-decoration: none; }
+.wallet-session-main span { color: var(--green); font-size: 8px; }
+.wallet-session-main b, .wallet-session-main strong { font-size: 9px; }
+.wallet-session > a:not(.wallet-session-main), .wallet-session > button:not(.wallet-session-main) { width: 32px; display: grid; place-items: center; border: 0; border-left: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; text-decoration: none; }
+.wallet-rail-panel { position: absolute; z-index: 120; top: 42px; right: -33px; width: min(340px, calc(100vw - 24px)); border: 1px solid var(--ink); padding: 14px; color: var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink); }
+.wallet-rail-panel > div:first-child, .wallet-quote { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-size: 9px; }
+.wallet-rail-panel label { display: grid; gap: 7px; margin-bottom: 12px; font-size: 9px; }
+.wallet-rail-panel input { min-height: 50px; border: 1px solid var(--ink); padding: 0 12px; color: var(--ink); background: transparent; font-size: 24px; font-weight: 700; }
+.wallet-rail-action { min-height: 44px; display: grid; place-items: center; width: 100%; border: 1px solid var(--ink); color: var(--paper); background: var(--ink); cursor: pointer; text-align: center; text-decoration: none; font-size: 9px; font-weight: 700; }
+.wallet-rail-action:hover { color: var(--ink); background: var(--accent); }
+.wallet-rail-action:disabled { cursor: wait; opacity: .55; }
 .privacy-pill { height: 34px; border: 1px solid var(--ink); padding: 0 12px; background: transparent; cursor: pointer; font-size: 9px; font-weight: 700; }
 .privacy-pill.active { background: var(--blue); color: var(--paper); }
 .round-button, .avatar-button { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--ink); border-radius: 50%; background: transparent; cursor: pointer; font-size: 9px; }
@@ -483,9 +503,9 @@ main { min-height: 100vh; overflow: hidden; }
   .file-tab { top: -31px; min-width: 145px; min-height: 32px; padding: 0 14px; border-radius: 18px 18px 0 0; font-size: 9px; }
   .file-copy { font-size: clamp(31px, 10vw, 44px); }
   .file-layer > strong { grid-column: 1; justify-self: start; font-size: 9px; }
-  .file-waitlist { min-height: 650px; display: block; padding-bottom: 18px; }
-  .waitlist-dossier { min-height: 540px; grid-template-columns: 1fr; gap: 35px; }
-  .waitlist-dossier h2 { margin: 75px 0 0; font-size: clamp(84px, 26vw, 132px); }
+  .file-waitlist { min-height: 470px; display: block; padding-bottom: 18px; }
+  .waitlist-dossier { min-height: 370px; grid-template-columns: 1fr; gap: 26px; padding-top: 24px; }
+  .waitlist-dossier h2 { margin: 0; font-size: clamp(58px, 17vw, 84px); }
   .dossier-form { padding: 20px 0 0; border-top: 1px solid rgba(23, 23, 23, .45); border-left: 0; }
   .dossier-form > div:first-of-type { grid-template-columns: 1fr; }
   .dossier-form button { min-height: 52px; border-top: 1px solid var(--ink); border-left: 0; }
@@ -528,6 +548,10 @@ main { min-height: 100vh; overflow: hidden; }
   .app-view-head { min-height: 62px; padding: 10px 12px; }
   .app-view-head h3 { font-size: 18px; }
   .app-view-head > div:first-child span, .round-button { display: none; }
+  .wallet-session-main { min-width: 145px; grid-template-columns: auto 1fr; }
+  .wallet-session-main strong { display: none; }
+  .wallet-connect-button { padding: 0 8px; }
+  .wallet-connect-button.privy-button { display: none; }
   .privacy-pill { height: 30px; padding: 0 8px; }
   .avatar-button { width: 30px; height: 30px; }
   .app-dashboard, .app-page { padding: 12px; }

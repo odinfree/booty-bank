@@ -30,7 +30,7 @@ export default function Home() {
         <section className="file-layer file-red file-waitlist" id="waitlist" aria-labelledby="waitlist-title">
           <span className="file-tab">04 / PRIVATE BETA</span>
           <div className="waitlist-dossier">
-            <div><span>INVITATION FILE / 2026</span><h2 id="waitlist-title">GET IN<br />EARLY.</h2></div>
+            <div><h2 id="waitlist-title">GET IN<br />EARLY.</h2></div>
             <WaitlistForm />
           </div>
         </section>

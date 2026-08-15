@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "wrangler": "4.123.0"
+  },
+  "dependencies": {
+    "@privy-io/node": "^0.28.0"
   }
 }

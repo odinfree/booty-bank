@@ -24,6 +24,31 @@ test("landing file headlines stay short", async () => {
   }
 });
 
+test("hero display type cannot use collision-prone tracking", async () => {
+  const css = await source("../src/app/globals.css");
+  const heroRule = css.match(/\.mosby-hero h1\s*\{([^}]+)\}/)?.[1] ?? "";
+  const waitlistRule = css.match(/\.waitlist-dossier h2\s*\{([^}]+)\}/)?.[1] ?? "";
+
+  assert.match(heroRule, /letter-spacing:\s*0\s*;/);
+  assert.match(heroRule, /line-height:\s*\.86\s*;/);
+  assert.match(waitlistRule, /font-size:\s*clamp\(68px,\s*7vw,\s*112px\)/);
+  assert.match(waitlistRule, /letter-spacing:\s*0\s*;/);
+  assert.doesNotMatch(await source("../src/app/page.tsx"), /INVITATION FILE/);
+});
+
+test("the panel-selected deposit-slot mark ships in the favicon and product chrome", async () => {
+  const [icon, header, app] = await Promise.all([
+    source("../src/app/icon.svg"),
+    source("../src/components/site-header.tsx"),
+    source("../src/components/bank-app.tsx"),
+  ]);
+
+  assert.match(icon, /M32 8A24 24/);
+  assert.match(header, /bootybank-mark-cream\.svg/);
+  assert.match(app, /bootybank-mark\.svg/);
+  assert.doesNotMatch(icon, /#c8ff35/);
+});
+
 test("landing keeps the prototype claim boundaries", async () => {
   const footer = await source("../src/components/site-footer.tsx");
 
