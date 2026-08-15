@@ -2,18 +2,27 @@
 
 import { useMemo, useState } from "react";
 
-type View = "home" | "payments" | "cards" | "plan" | "wealth" | "creator" | "privacy";
+type View = "home" | "payments" | "cards" | "plan" | "wealth" | "creator" | "privacy" | "more";
 type Action = "add" | "send" | "exchange" | "borrow" | null;
 
 const nav: { id: View; label: string; mark: string }[] = [
   { id: "home", label: "HOME", mark: "⌂" },
-  { id: "payments", label: "PAYMENTS", mark: "↗" },
+  { id: "payments", label: "MOVE", mark: "↗" },
   { id: "cards", label: "CARDS", mark: "▰" },
-  { id: "plan", label: "PLAN", mark: "◎" },
-  { id: "wealth", label: "WEALTH", mark: "↗" },
   { id: "creator", label: "CREATOR", mark: "★" },
-  { id: "privacy", label: "PRIVACY", mark: "∅" },
+  { id: "more", label: "MORE", mark: "•••" },
 ];
+
+const viewTitles: Record<View, string> = {
+  home: "HOME",
+  payments: "MOVE",
+  cards: "CARDS",
+  plan: "PLAN",
+  wealth: "WEALTH",
+  creator: "CREATOR",
+  privacy: "PRIVACY",
+  more: "MORE",
+};
 
 const transactions = [
   { icon: "OF", name: "ONLYFANS PAYOUT", meta: "INCOME / TODAY", amount: "+$4,820.00", tone: "positive" },
@@ -58,7 +67,7 @@ export default function BankApp() {
   const [currency, setCurrency] = useState("USD");
   const [recipient, setRecipient] = useState("MAYA");
   const [completed, setCompleted] = useState("");
-  const title = nav.find((item) => item.id === view)?.label ?? "HOME";
+  const title = viewTitles[view];
 
   const exchangeAmount = useMemo(() => {
     const value = Number(amount);
@@ -78,10 +87,10 @@ export default function BankApp() {
       <div className="section-index app-index"><span>01 / THE PRIMARY MONEY ACCOUNT</span><b>INTERACTIVE PRODUCT DEMO</b></div>
       <div className="bank-shell">
         <aside className="bank-sidebar">
-          <a href="#top" className="app-logo">BB</a>
+          <a href="/" className="app-logo">BB</a>
           <nav aria-label="Bank application navigation">
             {nav.map((item) => (
-              <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => { setView(item.id); setAction(null); }}>
+              <button key={item.id} className={view === item.id || (item.id === "more" && ["plan", "wealth", "privacy"].includes(view)) ? "active" : ""} onClick={() => { setView(item.id); setAction(null); }}>
                 <i>{item.mark}</i><span>{item.label}</span>
               </button>
             ))}
@@ -110,7 +119,7 @@ export default function BankApp() {
                 <article className="activity-card">
                   <div className="app-card-head"><h4>ACTIVITY</h4><button onClick={() => setView("payments")}>SEE ALL</button></div>
                   <div className="transaction-list">
-                    {transactions.slice(0, 4).map((item) => (
+                    {transactions.slice(0, 3).map((item) => (
                       <button key={`${item.name}-${item.meta}`} onClick={() => setCompleted(`${item.name} DETAILS`)}>
                         <i>{item.icon}</i><span><b>{item.name}</b><small>{item.meta}</small></span><strong className={item.tone}>{privateMode ? "••••••" : item.amount}</strong>
                       </button>
@@ -126,19 +135,6 @@ export default function BankApp() {
                   <button className="inline-action" onClick={() => setView("creator")}>OPEN INCOME CENTER ↗</button>
                 </article>
 
-                <article className="pockets-card">
-                  <div className="app-card-head"><h4>AUTOMATIC POCKETS</h4><Toggle checked={autoSplit} onChange={() => setAutoSplit(!autoSplit)} label="Toggle automatic payout split" /></div>
-                  <div className="pocket-row"><span><i className="tax" />TAX</span><strong>{privateMode ? "••••" : "$8,420"}</strong><small>68%</small></div>
-                  <div className="pocket-row"><span><i className="ops" />OPERATING</span><strong>{privateMode ? "••••" : "$3,208"}</strong><small>42%</small></div>
-                  <div className="pocket-row"><span><i className="save" />FUTURE</span><strong>{privateMode ? "••••" : "$6,800"}</strong><small>54%</small></div>
-                  <button className="inline-action" onClick={() => setView("plan")}>EDIT RULES ↗</button>
-                </article>
-
-                <article className={`mini-bank-card ${cardFrozen ? "frozen" : ""}`}>
-                  <div><span>BOOTY / VIRTUAL</span><button onClick={() => setCardFrozen(!cardFrozen)}>{cardFrozen ? "UNFREEZE" : "FREEZE"}</button></div>
-                  <strong>•••• 0935</strong>
-                  <p>{cardFrozen ? "CARD FROZEN" : "READY TO SPEND"}</p>
-                </article>
               </div>
             </div>
           )}
@@ -194,6 +190,17 @@ export default function BankApp() {
               <div className="page-lead"><div><span>PRIVACY CONTROL CENTER</span><h4>SHARE THE MINIMUM. SEE EVERY ACCESS.</h4></div><div className="privacy-score"><b>82</b><span>/ 100</span></div></div>
               <div className="privacy-control-grid"><article><span>ACCOUNT AUTHORIZATION</span><h5>FALCON-512</h5><p>TRANSACTION AUTHORIZATION RUNS IN THE BOOTYFALCONACCOUNT CONTRACT.</p><b>BUILT / EXPERIMENTAL</b></article><article><span>INCOME DISCLOSURE</span><h5>MINIMUM PACKET</h5><p>LENDERS SEE AN EVIDENCE SCORE AND BAND. EXACT PAYOUTS STAY OFFCHAIN.</p><b>DEMO LIVE</b></article><article><span>MONEY MOVEMENT</span><h5>SHIELDED PAYOUTS</h5><p>STRK20 NOTES, NULLIFIERS, VIEWING KEYS, AND PRIVATE NOTE DISCOVERY.</p><b>NEXT BUILD</b></article></div>
               <article className="access-log"><div className="app-card-head"><h4>DATA ACCESS LOG</h4><button onClick={() => setCompleted("ACCESS REPORT EXPORTED")}>EXPORT</button></div><div><span>TODAY / 10:14</span><b>YOU</b><p>REVEALED EXACT PAYOUT RANGE</p><strong>SELF</strong></div><div><span>AUG 12 / 16:08</span><b>SAMPLE LENDER</b><p>EVIDENCE SCORE + REVIEW BAND</p><strong>EXPIRED</strong></div><div><span>AUG 01 / 09:20</span><b>VERIFIER</b><p>COMMITMENT + NULLIFIER</p><strong>ACTIVE</strong></div></article>
+            </div>
+          )}
+
+          {view === "more" && (
+            <div className="app-page">
+              <div className="page-lead"><div><span>ACCOUNT TOOLS</span><h4>THE REST. OUT OF THE WAY.</h4></div></div>
+              <div className="more-menu">
+                <button onClick={() => setView("plan")}><span>01</span><b>PLAN</b><p>POCKETS, BUDGETS, AND AUTOMATIC PAYOUT RULES.</p><i>↗</i></button>
+                <button onClick={() => setView("wealth")}><span>02</span><b>WEALTH</b><p>SAVINGS, NET WORTH, AND RECURRING INVESTING.</p><i>↗</i></button>
+                <button onClick={() => setView("privacy")}><span>03</span><b>PRIVACY</b><p>DISCLOSURE CONTROLS, ACCESS LOGS, AND ACCOUNT SECURITY.</p><i>↗</i></button>
+              </div>
             </div>
           )}
 
