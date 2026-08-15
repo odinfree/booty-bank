@@ -22,12 +22,12 @@ export default function Home() {
       </header>
 
       <section className="hero">
-        <p className="eyebrow">FINANCIAL INFRASTRUCTURE FOR ADULT CREATORS</p>
-        <h1>PROVE THE PAYOUT.<br />KEEP THE HANDLE PRIVATE.</h1>
+        <p className="eyebrow">BUILT FOR ONLYFANS CREATORS</p>
+        <h1>ONLYFANS PAYOUTS.<br />ONE PRIVATE ACCOUNT.</h1>
         <div className="hero-aside">
-          <p>PROVE A STABLE PAYOUT HISTORY WITHOUT PUTTING YOUR HANDLE OR EXACT EARNINGS ONCHAIN.</p>
+          <p>CONNECT YOUR PAYOUT HISTORY. USE IT FOR PRIVATE INCOME VERIFICATION AND LENDER REVIEW.</p>
           <button onClick={() => setConnected(!connected)}>
-            {connected ? "INCOME SOURCE CONNECTED" : "CONNECT SAMPLE INCOME"}
+            {connected ? "SAMPLE SOURCE CONNECTED" : "CONNECT SAMPLE ONLYFANS DATA"}
             <span>↗</span>
           </button>
         </div>
@@ -42,7 +42,7 @@ export default function Home() {
 
         <div className="ledger-grid">
           <article className="income-panel">
-            <div className="panel-label">01 / VERIFIED INCOME</div>
+            <div className="panel-label">01 / ONLYFANS INCOME EVIDENCE</div>
             <div className="income-total">
               <span>NET PAYOUT / 90D</span>
               <strong className={privacyOpen ? "" : "redacted"}>$55,200</strong>
@@ -103,7 +103,7 @@ export default function Home() {
       </section>
 
       <footer>
-        <p>THIS DEMO DOES NOT OPEN A BANK ACCOUNT, ISSUE CREDIT, PROVIDE A CARD, OR OFFER INVESTMENTS.</p>
+        <p>THIS DEMO DOES NOT OPEN A BANK ACCOUNT, ISSUE CREDIT, PROVIDE A CARD, OR OFFER INVESTMENTS. NOT AFFILIATED WITH ONLYFANS.</p>
         <p>STARKNET / LOCAL PROTOTYPE / 2026</p>
       </footer>
     </main>
