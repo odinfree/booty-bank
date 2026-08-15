@@ -37,6 +37,16 @@ export async function handleRequest(request, env) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin");
 
+  if (url.hostname === "www.bootybank.app") {
+    return new Response(null, {
+      status: 308,
+      headers: {
+        "Cache-Control": "public, max-age=3600",
+        Location: `https://bootybank.app${url.pathname}${url.search}`,
+      },
+    });
+  }
+
   if (url.pathname !== "/api/waitlist") {
     return json({ message: "NOT FOUND." }, 404, origin);
   }

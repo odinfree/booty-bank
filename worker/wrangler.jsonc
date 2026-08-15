@@ -8,6 +8,10 @@
     {
       "pattern": "bootybank.app/api/waitlist*",
       "zone_name": "bootybank.app"
+    },
+    {
+      "pattern": "www.bootybank.app/*",
+      "zone_name": "bootybank.app"
     }
   ],
   "d1_databases": [

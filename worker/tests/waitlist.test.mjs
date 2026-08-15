@@ -71,6 +71,15 @@ test("answers allowed CORS preflight", async () => {
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://welttowelt.github.io");
 });
 
+test("redirects www to the apex while preserving path and query", async () => {
+  const { env } = mockEnv();
+  const request = new Request("https://www.bootybank.app/creator/card?ref=launch&mode=private");
+
+  const response = await handleRequest(request, env);
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("Location"), "https://bootybank.app/creator/card?ref=launch&mode=private");
+});
+
 test("rejects oversized requests before parsing or storage", async () => {
   const { env, inserted } = mockEnv();
   const request = new Request("https://bootybank.app/api/waitlist", {
