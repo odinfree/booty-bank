@@ -1,0 +1,12 @@
+{
+  "account_contract": "BootyFalconAccount",
+  "signature_scheme": "Falcon-512",
+  "hash_to_point": "SHAKE-256",
+  "signature_layout": "direct",
+  "source_repository": "https://github.com/OpenZeppelin/cairo-pq-verifiers",
+  "source_commit": "bece5c07eeea5784e570c01108ec000d2d04ae40",
+  "package": "pq_accounts",
+  "status": "working-devnet-account",
+  "audit_status": "experimental-unaudited",
+  "network_target": "Starknet Sepolia"
+}

@@ -2,19 +2,21 @@
 name = "private_creator_account"
 version = "0.1.0"
 edition = "2024_07"
-cairo-version = "2.14.0"
-scarb-version = "2.14.0"
+cairo-version = "2.18.0"
+scarb-version = "2.18.0"
 
 [dependencies]
-starknet = "2.14.0"
+starknet = "2.18.0"
+pqbench_interface = { git = "https://github.com/OpenZeppelin/cairo-pq-verifiers", rev = "bece5c07eeea5784e570c01108ec000d2d04ae40" }
+pqbench_falcon_512 = { git = "https://github.com/OpenZeppelin/cairo-pq-verifiers", rev = "bece5c07eeea5784e570c01108ec000d2d04ae40" }
 
 [dev-dependencies]
-snforge_std = "0.55.0"
+snforge_std = "0.59.0"
 
 [[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
 sierra = true
 casm = true
 
 [tool.scarb]
 allow-prebuilt-plugins = ["snforge_std"]
-
