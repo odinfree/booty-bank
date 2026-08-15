@@ -38,13 +38,13 @@ export default function PrivyStarknetWallet() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message ?? "PRIVY WALLET FAILED.");
 
-      const { StarkZap, OnboardStrategy, getPresets } = await import("starkzap");
+      const { StarkZap, OnboardStrategy, accountPresets, getPresets } = await import("starkzap");
       const sdk = new StarkZap({ network: PREFERRED_NETWORK });
       const signUrl = new URL(`${WALLET_API_ORIGIN}/api/wallet/sign`, window.location.origin).toString();
       const result = await sdk.onboard({
         strategy: OnboardStrategy.Privy,
         deploy: "never",
-        accountPreset: "argentXV050",
+        accountPreset: accountPresets.argentXV050,
         privy: {
           resolve: async () => ({
             walletId: data.walletId,
@@ -94,7 +94,8 @@ export default function PrivyStarknetWallet() {
   return (
     <div className="wallet-connect-block">
       <button className="wallet-connect-button privy-button" onClick={() => authenticated ? void connectPrivy() : login()} disabled={!ready}>
-        PRIVY
+        <span className="privy-label-wide">SOCIAL LOGIN</span>
+        <span className="privy-label-short">LOGIN</span>
       </button>
       {status && <span className="wallet-inline-error" role="status">{status}</span>}
     </div>

@@ -4,6 +4,7 @@ import type { Quote } from "@avnu/avnu-sdk";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WalletAccount } from "starknet";
+import PrivyPlaceholder from "./privy-placeholder";
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PrivyStarknetWallet = dynamic(() => import("./privy-starknet-wallet"), { ssr: false });
@@ -237,7 +238,7 @@ export default function StarknetWalletControl() {
   return (
     <div className="starknet-wallet-control" aria-label="Starknet wallet controls">
       <NativeStarknetWallet />
-      {PRIVY_APP_ID ? <PrivyStarknetWallet /> : null}
+      {PRIVY_APP_ID ? <PrivyStarknetWallet /> : <PrivyPlaceholder />}
     </div>
   );
 }

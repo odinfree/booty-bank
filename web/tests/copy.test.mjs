@@ -49,6 +49,24 @@ test("the panel-selected deposit-slot mark ships in the favicon and product chro
   assert.doesNotMatch(icon, /#c8ff35/);
 });
 
+test("Privy social login stays visible without pretending the placeholder is live", async () => {
+  const [control, placeholder, providers, liveWallet] = await Promise.all([
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/components/privy-placeholder.tsx"),
+    source("../src/components/app-providers.tsx"),
+    source("../src/components/privy-starknet-wallet.tsx"),
+  ]);
+
+  assert.match(control, /PRIVY_APP_ID \? <PrivyStarknetWallet \/> : <PrivyPlaceholder \/>/);
+  assert.match(placeholder, /SOCIAL LOGIN/);
+  assert.match(placeholder, /GOOGLE/);
+  assert.match(placeholder, /EMAIL/);
+  assert.match(placeholder, /NO ACCOUNT CREATED/);
+  assert.match(providers, /if \(!PRIVY_APP_ID\) return children/);
+  assert.match(liveWallet, /accountPreset: accountPresets\.argentXV050/);
+  assert.match(liveWallet, /deploy: "never"/);
+});
+
 test("landing keeps the prototype claim boundaries", async () => {
   const footer = await source("../src/components/site-footer.tsx");
 
