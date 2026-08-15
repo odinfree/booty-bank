@@ -84,7 +84,6 @@ export default function BankApp() {
 
   return (
     <section className="product-demo" id="app" aria-label="Interactive Booty Bank product demo">
-      <div className="section-index app-index"><span>01 / THE PRIMARY MONEY ACCOUNT</span><b>INTERACTIVE PRODUCT DEMO</b></div>
       <div className="bank-shell">
         <aside className="bank-sidebar">
           <a href="/" className="app-logo">BB</a>
@@ -219,7 +218,6 @@ export default function BankApp() {
           {completed && <div className="app-toast" role="status"><i>✓</i><span>{completed}</span></div>}
         </div>
       </div>
-      <div className="product-boundary"><b>PRODUCT SURFACE / WORKING DEMO</b><span>PARTNER RAILS ARE LABELLED IN THE BUILD MATRIX BELOW. NO FUNDS MOVE.</span></div>
     </section>
   );
 }
