@@ -1,0 +1,9 @@
+/target/
+/.playwright-cli/
+/.snfoundry_cache/
+/output/
+/web/.next/
+/web/out/
+/web/node_modules/
+/web/*.tsbuildinfo
+.DS_Store
