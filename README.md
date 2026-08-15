@@ -2,7 +2,7 @@
 
 > BORROW AGAINST YOUR BBL.
 
-Booty Bank is the primary money account built for OnlyFans creators. The product combines daily banking, creator income, private credit, fan perks, and post-quantum Starknet account authorization.
+Booty Bank is the primary money account built for OnlyFans creators. The product combines daily banking, creator income, private credit, fan perks, and a post-quantum-ready Starknet account contract.
 
 The goal is one account. A creator should not need Revolut beside it.
 
@@ -72,7 +72,7 @@ npm test
 npm run build
 ```
 
-The current local run passes 25 Cairo tests, 18 web tests, and 12 Worker tests. The production web export compiles successfully and is visually checked at desktop, short-desktop, and mobile widths.
+The current local run passes 28 Cairo tests, 19 web tests, and 12 Worker tests. The production web export compiles successfully and is visually checked at desktop, short-desktop, and mobile widths.
 
 ## Production deployment
 

@@ -144,3 +144,27 @@ fn rejects_legacy_transaction_version() {
     start_cheat_transaction_version(account.contract_address, 0);
     account.__execute__(array![]);
 }
+
+#[test]
+#[should_panic(expected: 'ACCOUNT_BAD_VERSION')]
+fn rejects_legacy_invoke_validation_version() {
+    let account = deploy_account();
+    start_cheat_transaction_version(account.contract_address, 0);
+    account.__validate__(array![]);
+}
+
+#[test]
+#[should_panic(expected: 'ACCOUNT_BAD_VERSION')]
+fn rejects_legacy_declare_validation_version() {
+    let account = deploy_account();
+    start_cheat_transaction_version(account.contract_address, 0);
+    account.__validate_declare__(0x123);
+}
+
+#[test]
+#[should_panic(expected: 'ACCOUNT_BAD_VERSION')]
+fn rejects_legacy_deploy_validation_version() {
+    let account = deploy_account();
+    start_cheat_transaction_version(account.contract_address, 0);
+    account.__validate_deploy__(0x123, 0x456, shake::public_key());
+}

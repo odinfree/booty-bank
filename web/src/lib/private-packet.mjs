@@ -10,7 +10,7 @@ export const SAMPLE_INPUT = Object.freeze({
 export const PRIVACY_FEATURES = Object.freeze([
   { name: "MINIMAL INCOME CREDENTIAL", status: "BUILT", layer: "CREDENTIAL" },
   { name: "EXPIRY + REVOCATION", status: "BUILT", layer: "CREDENTIAL" },
-  { name: "FALCON-512 ACCOUNT", status: "BUILT", layer: "ACCOUNT" },
+  { name: "FALCON-512 CONTRACT", status: "LOCAL TESTS", layer: "ACCOUNT" },
   { name: "EXACT EARNINGS OFFCHAIN", status: "BUILT", layer: "DATA" },
   { name: "SELECTIVE LENDER PACKET", status: "DEMO", layer: "CREDIT" },
   { name: "STRK20 SHIELDED PAYOUTS", status: "NEXT", layer: "MONEY" },
@@ -19,7 +19,8 @@ export const PRIVACY_FEATURES = Object.freeze([
   { name: "RELAYER + PAYMASTER", status: "NEXT", layer: "NETWORK" },
   { name: "BATCHED PUBLISHING", status: "ROADMAP", layer: "TIMING" },
   { name: "PRIVATE NOTE DISCOVERY", status: "ROADMAP", layer: "WALLET" },
-  { name: "PQ RECOVERY + KEY ROTATION", status: "ROADMAP", layer: "ACCOUNT" },
+  { name: "DUAL-PROOF KEY ROTATION", status: "BUILT", layer: "ACCOUNT" },
+  { name: "PQ RECOVERY", status: "ROADMAP", layer: "ACCOUNT" },
 ]);
 
 export const NEOBANK_FEATURES = Object.freeze([
@@ -58,7 +59,7 @@ export const CORE_MONEY_FEATURES = Object.freeze([
   { group: "CREDIT", name: "CREATOR INCOME ADVANCE", status: "DEMO" },
   { group: "SECURITY", name: "BIOMETRICS + PASSKEY RECOVERY", status: "ROADMAP" },
   { group: "SECURITY", name: "FRAUD ALERTS + 24/7 SUPPORT", status: "PARTNER" },
-  { group: "SECURITY", name: "FALCON-512 AUTHORIZATION", status: "BUILT" },
+  { group: "SECURITY", name: "FALCON-512 PQ-READY ACCOUNT", status: "BUILT" },
 ]);
 
 function finiteNumber(value, field) {
@@ -112,7 +113,7 @@ export function buildPrivateIncomePacket(input = SAMPLE_INPUT) {
       scheme: "FALCON-512 / SHAKE-256 DIRECT",
       keyFelts: 29,
       signatureFelts: 31,
-      network: "LOCAL DEVNET",
+      network: "LOCAL TEST HARNESS",
     },
   };
 }

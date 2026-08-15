@@ -4,26 +4,39 @@ Scope
 
 - `src/falcon_account.cairo`
 - `src/lib.cairo`
+- `web/src`
+- `worker/src`
 
-The review used four Cairo attack-vector partitions covering access control and upgrades, external calls and reentrancy, economic logic, and storage and trust chains.
+The review covered Cairo account authorization, browser wallet and quote paths, Privy boundaries, waitlist storage, request handling, and public claim accuracy. Each accepted finding received a code fix and a regression check in the same release.
 
 ## Closed findings
 
 | Priority | Finding | Fix | Regression coverage |
 |---|---|---|---|
-| P0 | Falcon signing authority could not rotate | Added self-call-only public-key rotation, versioned state, and a rotation event | External rotation fails, the former key fails, and a restored valid key succeeds |
+| P0 | Falcon rotation could replace the only key without showing control of the new key | Rotation now requires a transaction signature from the current key and a second signature from the proposed key | Valid dual-signature rotation passes. Missing and mismatched proposed-key signatures fail |
 | P1 | Credential verifier authority could not rotate | Added verifier-only authority rotation with zero-address rejection and an event | The replacement verifier publishes and the former verifier fails |
+| P0 | Privy exposed arbitrary hash signing to an authenticated browser | Removed the raw-sign route and active browser integration | The former signing path returns no signing capability |
+| P1 | AVNU builder output could reach wallet execution without an independent call policy | Kept live quotes and locked execution | Source and copy tests reject a public execution path |
+| P1 | Request limits were checked after buffering and the waitlist had no edge quota | Added bounded streaming and a five-attempt-per-minute Cloudflare rate-limit binding | Lengthless oversized streams fail before parsing. Excess requests fail before D1 writes |
 
-The other three vector partitions returned no finding that passed the false-positive gate.
+No SQL injection, credential disclosure, cross-user wallet lookup, contract-caller account bypass, or deployed Falcon account was found.
 
 ## Test gate
 
-- 22 Cairo tests pass.
+- 28 Cairo tests pass.
+- 19 web tests pass.
+- 12 Worker tests pass.
 - The account accepts a valid Falcon-512 signature and rejects tampering.
 - Contract callers cannot enter the execution path.
 - Legacy transaction versions fail.
-- Credential versions, expiry, revocation, caller authorization, and verifier rotation have regression tests.
+- Key rotation requires current-key authorization and proposed-key possession.
+- Credential versions, expiry, revocation, caller authorization, and verifier rotation have regression coverage.
+- Web and Worker production builds pass with zero dependency-audit findings.
 
 ## Open release gates
 
-The repository review does not replace an independent audit. The Falcon verifier dependency is experimental. A separate post-quantum recovery policy, signer integration, Sepolia deployment, and independent audit remain mandatory before mainnet use.
+This repository review does not replace an independent audit. The Falcon verifier dependency is experimental. The account has not been deployed. A separate post-quantum recovery policy, signer integration, Sepolia deployment, and independent audit remain required before mainnet use.
+
+The waitlist stores an address after form submission without proving control of that inbox. Double opt-in must ship before the list sends email. Privy wallet creation stays dormant until a typed transaction policy binds chain, account, nonce, calls, limits, expiry, and visible user approval.
+
+The current rotation fixture verifies both signature slots with one SHAKE-compatible key and rejects a mismatched proposed-key signature. A second genuine SHAKE-compatible fixture is still required to demonstrate a successful handoff between distinct keys and rejection of the former key after rotation.

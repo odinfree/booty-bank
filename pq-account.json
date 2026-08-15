@@ -5,8 +5,10 @@
   "signature_layout": "direct",
   "source_repository": "https://github.com/OpenZeppelin/cairo-pq-verifiers",
   "source_commit": "bece5c07eeea5784e570c01108ec000d2d04ae40",
-  "package": "pq_accounts",
-  "status": "working-devnet-account",
+  "package": "booty_bank",
+  "verifier_package": "pqbench_falcon_512",
+  "status": "contract-tests-only",
   "audit_status": "experimental-unaudited",
+  "deployment_status": "not-deployed",
   "network_target": "Starknet Sepolia"
 }

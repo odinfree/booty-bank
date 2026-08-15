@@ -165,6 +165,7 @@ pub mod BootyFalconAccount {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn validate_transaction(self: @ContractState) -> felt252 {
+            assert_valid_tx_version();
             let tx_info = starknet::get_tx_info().unbox();
             let signature = if tx_info.signature.len() == SIG_FELTS_DIRECT * 2 {
                 tx_info.signature.slice(0, SIG_FELTS_DIRECT)

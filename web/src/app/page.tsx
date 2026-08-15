@@ -16,12 +16,12 @@ export default function Home() {
         <div className="hero-title-block">
           <h1 id="hero-title">BOOTY<br />BANK</h1>
         </div>
-        <div className="hero-bottomline"><p>BORROW AGAINST YOUR BBL.</p><a href="/app/">OPEN APP <span>↗</span></a></div>
+        <div className="hero-bottomline"><p>BORROW AGAINST YOUR BBL.</p><span className="hero-status"><i /> WORKING PROTOTYPE</span></div>
       </section>
 
       <section className="pq-declaration" aria-labelledby="pq-title">
-        <div><span>FALCON-512 / BUILT</span><b>EXPERIMENTAL ACCOUNT AUTHORIZATION</b></div>
-        <h2 id="pq-title">POST-QUANTUM<br />AUTHORIZATION.</h2>
+        <div><span>FALCON-512 CONTRACT / 28 TESTS</span><b>EXPERIMENTAL / LOCAL TESTS / NOT DEPLOYED</b></div>
+        <h2 id="pq-title">POST-QUANTUM<br />READY.</h2>
         <div className="pq-declaration-foot"><p>PRIVATE INCOME.<br />MINIMUM DISCLOSURE.</p><a href="/privacy/">OPEN SECURITY FILE <span>↗</span></a></div>
       </section>
 

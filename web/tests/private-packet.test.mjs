@@ -44,7 +44,7 @@ test("primary account matrix covers the core daily-money loop", () => {
   assert.ok(names.has("POCKETS + BUDGETS"));
   assert.ok(names.has("SAVINGS + RECURRING INVESTING"));
   assert.ok(names.has("FRAUD ALERTS + 24/7 SUPPORT"));
-  assert.ok(names.has("FALCON-512 AUTHORIZATION"));
+  assert.ok(names.has("FALCON-512 PQ-READY ACCOUNT"));
 });
 
 test("private statement keeps exact income and platform offchain", () => {
@@ -59,6 +59,18 @@ test("privacy matrix distinguishes built code from roadmap work", () => {
   assert.ok(PRIVACY_FEATURES.some((feature) => feature.status === "BUILT"));
   assert.ok(PRIVACY_FEATURES.some((feature) => feature.status === "NEXT"));
   assert.ok(PRIVACY_FEATURES.some((feature) => feature.status === "ROADMAP"));
+  assert.deepEqual(
+    PRIVACY_FEATURES.find(({ name }) => name === "FALCON-512 CONTRACT"),
+    { name: "FALCON-512 CONTRACT", status: "LOCAL TESTS", layer: "ACCOUNT" },
+  );
+  assert.deepEqual(
+    PRIVACY_FEATURES.find(({ name }) => name === "DUAL-PROOF KEY ROTATION"),
+    { name: "DUAL-PROOF KEY ROTATION", status: "BUILT", layer: "ACCOUNT" },
+  );
+  assert.deepEqual(
+    PRIVACY_FEATURES.find(({ name }) => name === "PQ RECOVERY"),
+    { name: "PQ RECOVERY", status: "ROADMAP", layer: "ACCOUNT" },
+  );
 });
 
 test("neobank matrix covers Ready card, money, payment, and community surfaces", () => {

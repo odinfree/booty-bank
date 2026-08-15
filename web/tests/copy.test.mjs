@@ -45,10 +45,16 @@ test("Fable layout directives and sticky behavior stay locked", async () => {
   ]);
 
   assert.match(css, /main\s*\{[^}]*overflow:\s*clip/);
-  assert.match(css, /\.site-wordmark img\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px/);
+  assert.match(css, /\.site-wordmark img\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px/);
   assert.match(css, /\.hero-bottomline p\s*\{[^}]*font-size:\s*clamp\(28px,\s*4\.5vw,\s*64px\)/);
   assert.ok(css.includes(".pq-declaration h2 { font-size: clamp(42px, 11.6vw, 66px)"));
-  assert.match(header, /width="28" height="28"/);
+  assert.match(header, /width="40" height="40"/);
+  assert.match(header, /className="site-cta" href="\/app\/">OPEN APP/);
+  assert.match(await source("../src/app/page.tsx"), /className="hero-status".*WORKING PROTOTYPE/);
+  assert.match(css, /\.site-cta:focus-visible, \.pq-declaration a:focus-visible \{ outline-color: var\(--blue\)/);
+  assert.match(css, /\.file-green \.file-tab, \.file-green > strong \{ color: var\(--ink\)/);
+  assert.match(css, /\.dossier-form input::placeholder \{ color: var\(--ink\); opacity: 1/);
+  assert.match(css, /\.site-header nav \{ grid-column: 1 \/ -1; grid-row: 2; display: flex/);
   assert.match(modalHook, /event\.key === "Escape"/);
   assert.match(modalHook, /event\.key !== "Tab"/);
   assert.doesNotMatch(waitlist, /name="company"/);
@@ -81,6 +87,19 @@ test("Privy social login stays visible without pretending the placeholder is liv
   assert.match(placeholder, /NO ACCOUNT CREATED/);
   assert.match(providers, /return children/);
   assert.doesNotMatch(control, /executeSwap/);
+});
+
+test("the account opens in standard mode and private mode is opt-in", async () => {
+  const app = await source("../src/components/bank-app.tsx");
+
+  assert.match(app, /const \[privateMode, setPrivateMode\] = useState\(false\)/);
+  assert.match(app, /privateMode \? "PRIVATE" : "STANDARD"/);
+  assert.doesNotMatch(app, /privateMode \? "PRIVATE" : "VISIBLE"/);
+  assert.doesNotMatch(app, /app-redacted/);
+  assert.match(app, /privateMode \? "AMOUNT HIDDEN" : "\+\$6,142\.10 THIS MONTH \/ \+27\.4%"/);
+  assert.match(app, /privateMode \? "••••" : "−\$1,250"/);
+  assert.match(app, /SEND SAMPLE PAYMENT/);
+  assert.match(app, /ILLUSTRATIVE SCORE/);
 });
 
 test("landing keeps the prototype claim boundaries", async () => {
