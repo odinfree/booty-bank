@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { handleRequest, normalizeEmail, normalizeFelt } from "../src/index.mjs";
+import { handleRequest, normalizeEmail } from "../src/index.mjs";
 
 function mockEnv({ configured = true } = {}) {
   const inserted = [];
@@ -45,7 +45,6 @@ function mockEnv({ configured = true } = {}) {
 
 function mockPrivy({ userId = "did:privy:user-1" } = {}) {
   const created = [];
-  const signed = [];
   const client = {
     utils() {
       return {
@@ -69,14 +68,10 @@ function mockPrivy({ userId = "did:privy:user-1" } = {}) {
             public_key: "0x456",
           };
         },
-        async rawSign(walletId, input) {
-          signed.push({ walletId, input });
-          return { signature: "0xabc" };
-        },
       };
     },
   };
-  return { client, created, signed, services: { createPrivyClient: () => client } };
+  return { client, created, services: { createPrivyClient: () => client } };
 }
 
 function walletRequest(path, body, token = "valid-token") {
@@ -95,12 +90,6 @@ test("normalizes valid email and rejects invalid input", () => {
   assert.equal(normalizeEmail(" Creator@Example.COM "), "creator@example.com");
   assert.equal(normalizeEmail("not-an-email"), null);
   assert.equal(normalizeEmail("a".repeat(255) + "@example.com"), null);
-});
-
-test("normalizes Starknet felts and rejects field overflow", () => {
-  assert.equal(normalizeFelt("0x000A"), "0xa");
-  assert.equal(normalizeFelt("not-a-felt"), null);
-  assert.equal(normalizeFelt(`0x${((1n << 251n) + (17n << 192n) + 1n).toString(16)}`), null);
 });
 
 test("stores only the normalized email", async () => {
@@ -130,7 +119,7 @@ test("rejects untrusted browser origins before storage", async () => {
 
 test("answers allowed CORS preflight with authorization enabled", async () => {
   const { env } = mockEnv();
-  const request = new Request("https://bootybank.app/api/wallet/sign", {
+  const request = new Request("https://bootybank.app/api/wallet/starknet", {
     method: "OPTIONS",
     headers: { Origin: "https://welttowelt.github.io" },
   });
@@ -163,6 +152,58 @@ test("rejects oversized requests before parsing or storage", async () => {
   assert.deepEqual(inserted, []);
 });
 
+test("stops streaming request bodies at the byte limit without Content-Length", async () => {
+  const { env, inserted } = mockEnv();
+  const request = new Request("https://bootybank.app/api/waitlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: "https://bootybank.app" },
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(`{"email":"${"a".repeat(2200)}@example.com"}`));
+        controller.close();
+      },
+    }),
+    duplex: "half",
+  });
+  const response = await handleRequest(request, env);
+  assert.equal(response.status, 413);
+  assert.deepEqual(inserted, []);
+});
+
+test("production rejects localhost origins while local development accepts them", async () => {
+  const production = mockEnv();
+  const prodResponse = await handleRequest(new Request("https://bootybank.app/api/waitlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: "http://localhost:3000" },
+    body: JSON.stringify({ email: "creator@example.com" }),
+  }), production.env);
+  assert.equal(prodResponse.status, 403);
+
+  const local = mockEnv();
+  const localResponse = await handleRequest(new Request("http://localhost/api/waitlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: "http://localhost:3000" },
+    body: JSON.stringify({ email: "creator@example.com" }),
+  }), local.env);
+  assert.equal(localResponse.status, 201);
+});
+
+test("rate limits abusive waitlist clients before database writes", async () => {
+  const { env, inserted } = mockEnv();
+  env.WAITLIST_RATE_LIMITER = { async limit({ key }) { return { success: key !== "203.0.113.9" }; } };
+  const response = await handleRequest(new Request("https://bootybank.app/api/waitlist", {
+    method: "POST",
+    headers: {
+      "CF-Connecting-IP": "203.0.113.9",
+      "Content-Type": "application/json",
+      Origin: "https://bootybank.app",
+    },
+    body: JSON.stringify({ email: "creator@example.com" }),
+  }), env);
+  assert.equal(response.status, 429);
+  assert.deepEqual(inserted, []);
+});
+
 test("requires configured Privy secrets and a valid bearer session", async () => {
   const disabled = mockEnv({ configured: false });
   const unavailable = await handleRequest(walletRequest("/api/wallet/starknet", {}), disabled.env, mockPrivy().services);
@@ -189,21 +230,8 @@ test("creates one owner-bound Privy Starknet wallet and reuses it", async () => 
   assert.equal((await second.json()).walletId, "wallet_123");
 });
 
-test("signs only a wallet owned by the authenticated Privy user", async () => {
-  const { env, wallets } = mockEnv();
-  wallets.set("did:privy:user-1", {
-    wallet_id: "wallet_123",
-    privy_address: "0x123",
-    public_key: "0x456",
-  });
-  const privy = mockPrivy();
-
-  const denied = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_other", hash: "0xa" }), env, privy.services);
-  assert.equal(denied.status, 404);
-  assert.equal(privy.signed.length, 0);
-
-  const signed = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_123", hash: "0x000A" }), env, privy.services);
-  assert.equal(signed.status, 200);
-  assert.deepEqual(await signed.json(), { signature: "0xabc" });
-  assert.deepEqual(privy.signed, [{ walletId: "wallet_123", input: { params: { hash: "0xa" } } }]);
+test("raw signing is not exposed to browsers", async () => {
+  const { env } = mockEnv();
+  const response = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_123", hash: "0xa" }), env, mockPrivy().services);
+  assert.equal(response.status, 404);
 });

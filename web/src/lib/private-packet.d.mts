@@ -27,6 +27,7 @@ export const SAMPLE_INPUT: Readonly<PrivateIncomeInput>;
 export const PRIVACY_FEATURES: ReadonlyArray<PrivacyFeature>;
 export const NEOBANK_FEATURES: ReadonlyArray<NeobankFeature>;
 export const CORE_MONEY_FEATURES: ReadonlyArray<CoreMoneyFeature>;
+export function parseNonNegativeNumber(value: string): number | null;
 export function buildPrivateIncomePacket(input?: PrivateIncomeInput): {
   privateStatement: {
     platform: string;

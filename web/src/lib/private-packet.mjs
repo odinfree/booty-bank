@@ -69,6 +69,12 @@ function finiteNumber(value, field) {
   return number;
 }
 
+export function parseNonNegativeNumber(value) {
+  if (value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
 export function buildPrivateIncomePacket(input = SAMPLE_INPUT) {
   const normalized = {
     monthlyNet: finiteNumber(input.monthlyNet, "monthlyNet"),

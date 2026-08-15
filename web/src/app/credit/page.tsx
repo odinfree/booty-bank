@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import SiteHeader from "../../components/site-header";
-import { buildPrivateIncomePacket, SAMPLE_INPUT } from "../../lib/private-packet.mjs";
+import { buildPrivateIncomePacket, parseNonNegativeNumber, SAMPLE_INPUT } from "../../lib/private-packet.mjs";
 
 type IncomeInput = typeof SAMPLE_INPUT;
 
@@ -21,9 +21,20 @@ const adjustmentPatterns = [
 export default function CreditPage() {
   const [consent, setConsent] = useState(false);
   const [ready, setReady] = useState(false);
+  const [inputError, setInputError] = useState("");
   const [inputs, setInputs] = useState<IncomeInput>({ ...SAMPLE_INPUT });
   const packet = useMemo(() => buildPrivateIncomePacket(inputs), [inputs]);
-  function update(field: keyof IncomeInput, value: string) { setInputs((current) => ({ ...current, [field]: Number(value) })); setReady(false); }
+  function update(field: keyof IncomeInput, value: string) {
+    const parsed = parseNonNegativeNumber(value);
+    if (parsed === null) {
+      setInputError("USE ZERO OR MORE.");
+      setReady(false);
+      return;
+    }
+    setInputError("");
+    setInputs((current) => ({ ...current, [field]: parsed }));
+    setReady(false);
+  }
   function selectPreset(field: "volatility" | "chargebackRate", value: number) { setInputs((current) => ({ ...current, [field]: value })); setReady(false); }
 
   return (
@@ -37,8 +48,9 @@ export default function CreditPage() {
             <fieldset className="preset-field"><legend>INCOME PATTERN</legend><div>{incomePatterns.map((preset) => <button type="button" aria-pressed={inputs.volatility === preset.value} onClick={() => selectPreset("volatility", preset.value)} key={preset.label}><b>{preset.label}</b><span>{preset.detail}</span></button>)}</div></fieldset>
             <fieldset className="preset-field"><legend>PAYOUT ADJUSTMENTS</legend><div>{adjustmentPatterns.map((preset) => <button type="button" aria-pressed={inputs.chargebackRate === preset.value} onClick={() => selectPreset("chargebackRate", preset.value)} key={preset.label}><b>{preset.label}</b><span>{preset.detail}</span></button>)}</div></fieldset>
           </div>
+          <output className="credit-input-error" aria-live="polite">{inputError}</output>
           <label className="consent-row"><input type="checkbox" checked={consent} onChange={(event) => { setConsent(event.target.checked); setReady(false); }} /><span>I AUTHORIZE THIS SAMPLE INCOME REVIEW.</span></label>
-          <button className="build-button" disabled={!consent} onClick={() => setReady(true)}>{ready ? "PACKET CREATED" : "CREATE PRIVATE PACKET"}<span>↗</span></button>
+          <button className="build-button" disabled={!consent || Boolean(inputError)} onClick={() => setReady(true)}>{ready ? "PACKET CREATED" : "CREATE PRIVATE PACKET"}<span>↗</span></button>
         </div>
         <div className={`credit-result ${ready ? "ready" : ""}`}><div className="workbench-label"><span>02 / LENDER OUTPUT</span><b>{ready ? "READY" : "LOCKED"}</b></div><div className="score-line"><strong>{ready ? packet.lenderPacket.evidenceScore : "--"}</strong><span>/ 100<br />DATA SCORE</span></div><dl><div><dt>REVIEW BAND</dt><dd>{ready ? packet.lenderPacket.reviewBand : "PACKET REQUIRED"}</dd></div><div><dt>SAMPLE LIMIT</dt><dd>{ready ? `$${packet.lenderPacket.illustrativeLimit.toLocaleString("en-US")}` : "--"}</dd></div><div><dt>PUBLIC IDENTITY</dt><dd>NONE</dd></div><div><dt>EXACT PAYOUTS</dt><dd>OFFCHAIN</dd></div></dl><p>{packet.lenderPacket.disclaimer}</p></div>
       </section>

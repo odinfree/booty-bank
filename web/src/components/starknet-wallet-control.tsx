@@ -1,13 +1,9 @@
 "use client";
 
 import type { Quote } from "@avnu/avnu-sdk";
-import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WalletAccount } from "starknet";
 import PrivyPlaceholder from "./privy-placeholder";
-
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-const PrivyStarknetWallet = dynamic(() => import("./privy-starknet-wallet"), { ssr: false });
 
 type NetworkName = "mainnet" | "sepolia";
 type NativeSession = {
@@ -69,7 +65,6 @@ function NativeStarknetWallet() {
   const [sellAmount, setSellAmount] = useState("10");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLabel, setQuoteLabel] = useState("");
-  const [txHash, setTxHash] = useState("");
   const [railBusy, setRailBusy] = useState(false);
 
   const attachWallet = useCallback(async (walletProvider: unknown, subscribe = true) => {
@@ -141,13 +136,11 @@ function NativeStarknetWallet() {
     setSession(null);
     setQuote(null);
     setSwapOpen(false);
-    setTxHash("");
   }
 
   async function fetchAvnuQuote() {
     if (!session || !accountRef.current) return;
     setQuote(null);
-    setTxHash("");
     setQuoteLabel("QUOTING…");
     setRailBusy(true);
     try {
@@ -177,29 +170,6 @@ function NativeStarknetWallet() {
     }
   }
 
-  async function executeAvnuSwap() {
-    if (!quote || !accountRef.current || !session) return;
-    setQuoteLabel("CONFIRM IN WALLET…");
-    setRailBusy(true);
-    try {
-      const { executeSwap, SEPOLIA_BASE_URL } = await import("@avnu/avnu-sdk");
-      const options = session.network === "sepolia" ? { baseUrl: SEPOLIA_BASE_URL } : undefined;
-      const result = await executeSwap({
-        provider: accountRef.current,
-        quote,
-        slippage: 0.005,
-        executeApprove: true,
-      }, options);
-      setTxHash(result.transactionHash);
-      setQuoteLabel("SUBMITTED TO STARKNET.");
-      setSession(await nativeSession(accountRef.current, session.walletName));
-    } catch (error) {
-      setQuoteLabel(error instanceof Error ? error.message.toUpperCase().slice(0, 90) : "SWAP REJECTED.");
-    } finally {
-      setRailBusy(false);
-    }
-  }
-
   if (!session) {
     return (
       <div className="wallet-connect-block">
@@ -223,11 +193,10 @@ function NativeStarknetWallet() {
       {swapOpen && (
         <div className="wallet-rail-panel">
           <div><span>LIVE RAIL</span><b>{session.walletName}</b></div>
-          <label><span>SELL STRK</span><input value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setQuote(null); setTxHash(""); }} inputMode="decimal" maxLength={32} /></label>
+          <label><span>SELL STRK</span><input value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setQuote(null); }} inputMode="decimal" maxLength={32} /></label>
           <div className="wallet-quote"><span>GET USDC</span><b>{quoteLabel || "GET A LIVE AVNU QUOTE"}</b></div>
           {!quote && <button className="wallet-rail-action" onClick={fetchAvnuQuote} disabled={railBusy}>QUOTE ON AVNU ↗</button>}
-          {quote && !txHash && <button className="wallet-rail-action" onClick={executeAvnuSwap} disabled={railBusy}>SWAP / 0.5% MAX SLIPPAGE ↗</button>}
-          {txHash && <a className="wallet-rail-action" href={voyagerAddressUrl(session.network, txHash).replace("/contract/", "/tx/")} target="_blank" rel="noreferrer">VIEW TRANSACTION ↗</a>}
+          {quote && <button className="wallet-rail-action" disabled>EXECUTION LOCKED / VERIFIED CALL POLICY NEXT</button>}
         </div>
       )}
     </div>
@@ -238,7 +207,7 @@ export default function StarknetWalletControl() {
   return (
     <div className="starknet-wallet-control" aria-label="Starknet wallet controls">
       <NativeStarknetWallet />
-      {PRIVY_APP_ID ? <PrivyStarknetWallet /> : <PrivyPlaceholder />}
+      <PrivyPlaceholder />
     </div>
   );
 }

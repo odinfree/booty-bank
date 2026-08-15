@@ -48,7 +48,7 @@ The access log names the reader, fields, time, and access status. Disclosure sho
 
 The app keeps destructive controls explicit. Card freeze is reversible. Payment and exchange sheets show the final amount before confirmation. A failed partner call must keep the source balance unchanged and return a human-readable reason.
 
-The Falcon account now supports authenticated key rotation. A separate post-quantum recovery policy still needs a design that does not fall back to ECDSA. Until that ships and receives an independent audit, the account stays off mainnet.
+The Falcon account now requires current-key authorization and proposed-key proof of possession for rotation. A separate post-quantum recovery policy still needs a design that does not fall back to ECDSA. Until that ships and receives an independent audit, the account stays off mainnet.
 
 ## Feature boundary
 

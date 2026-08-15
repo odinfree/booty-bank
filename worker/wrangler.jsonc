@@ -11,7 +11,7 @@
       "zone_name": "bootybank.app"
     },
     {
-      "pattern": "bootybank.app/api/wallet/*",
+      "pattern": "bootybank.app/api/wallet/starknet*",
       "zone_name": "bootybank.app"
     },
     {
@@ -24,6 +24,13 @@
       "binding": "WAITLIST_DB",
       "database_name": "booty-bank-waitlist",
       "database_id": "4b36512c-ded7-40f7-b96c-252b3ebdaa48"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "WAITLIST_RATE_LIMITER",
+      "namespace_id": "62082615",
+      "simple": { "limit": 5, "period": 60 }
     }
   ]
 }

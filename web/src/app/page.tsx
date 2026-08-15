@@ -19,6 +19,12 @@ export default function Home() {
         <div className="hero-bottomline"><p>BORROW AGAINST YOUR BBL.</p><a href="/app/">OPEN APP <span>↗</span></a></div>
       </section>
 
+      <section className="pq-declaration" aria-labelledby="pq-title">
+        <div><span>FALCON-512 / BUILT</span><b>EXPERIMENTAL ACCOUNT AUTHORIZATION</b></div>
+        <h2 id="pq-title">POST-QUANTUM<br />AUTHORIZATION.</h2>
+        <div className="pq-declaration-foot"><p>PRIVATE INCOME.<br />MINIMUM DISCLOSURE.</p><a href="/privacy/">OPEN SECURITY FILE <span>↗</span></a></div>
+      </section>
+
       <section className="file-cabinet" aria-label="Booty Bank product files">
         {files.map((file) => (
           <a className={`file-layer ${file.className}`} href={file.href} key={file.title}>

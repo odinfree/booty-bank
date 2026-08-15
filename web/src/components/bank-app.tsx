@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import StarknetWalletControl from "./starknet-wallet-control";
+import { useModalFocus } from "../hooks/use-modal-focus";
 
 type View = "home" | "payments" | "cards" | "plan" | "wealth" | "creator" | "privacy" | "more";
 type Action = "add" | "send" | "exchange" | "borrow" | null;
@@ -67,6 +68,9 @@ export default function BankApp() {
   const [currency, setCurrency] = useState("USD");
   const [recipient, setRecipient] = useState("MAYA");
   const [completed, setCompleted] = useState("");
+  const actionDialogRef = useRef<HTMLDivElement>(null);
+  const closeAction = useCallback(() => setAction(null), []);
+  useModalFocus(Boolean(action), actionDialogRef, closeAction);
   const title = viewTitles[view];
 
   const exchangeAmount = useMemo(() => {
@@ -206,13 +210,13 @@ export default function BankApp() {
           )}
 
           {action && (
-            <div className="action-backdrop" onClick={() => setAction(null)}>
-              <div className="action-sheet" role="dialog" aria-modal="true" aria-label={`${action} money`} onClick={(event) => event.stopPropagation()}>
-                <div className="sheet-head"><span>{action === "add" ? "ADD MONEY" : action === "send" ? "NEW PAYMENT" : action === "exchange" ? "EXCHANGE" : "CREATOR ADVANCE"}</span><button onClick={() => setAction(null)} aria-label="Close">×</button></div>
+            <div className="action-backdrop" onClick={closeAction}>
+              <div ref={actionDialogRef} tabIndex={-1} className="action-sheet" role="dialog" aria-modal="true" aria-label={`${action} money`} onClick={(event) => event.stopPropagation()}>
+                <div className="sheet-head"><span>{action === "add" ? "ADD MONEY" : action === "send" ? "NEW PAYMENT" : action === "exchange" ? "EXCHANGE" : "CREATOR ADVANCE"}</span><button onClick={closeAction} aria-label="Close">×</button></div>
                 {action === "send" && <><label><span>TO</span><select value={recipient} onChange={(event) => setRecipient(event.target.value)}>{recipients.map((name) => <option key={name}>{name}</option>)}</select></label><label><span>AMOUNT</span><div className="money-input"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /><select value={currency} onChange={(event) => setCurrency(event.target.value)}><option>USD</option><option>EUR</option><option>GBP</option><option>USDC</option></select></div></label><div className="sheet-summary"><span>ARRIVES</span><b>INSTANTLY</b><span>FEE</span><b>$0.00</b></div><button className="sheet-submit" disabled={!Number(amount)} onClick={() => complete(`SENT ${amount} ${currency} TO ${recipient}`)}>REVIEW AND SEND ↗</button></>}
                 {action === "exchange" && <><label><span>YOU SELL</span><div className="money-input"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /><select><option>USD</option></select></div></label><label><span>YOU GET</span><div className="money-input"><input value={exchangeAmount} readOnly /><select><option>EUR</option></select></div></label><div className="sheet-summary"><span>DEMO RATE</span><b>1 USD = 0.8554 EUR</b><span>FEE</span><b>$0.00</b></div><button className="sheet-submit" disabled={!Number(amount)} onClick={() => complete(`EXCHANGED ${amount} USD`)}>CONFIRM EXCHANGE ↗</button></>}
                 {action === "add" && <><div className="funding-options"><button onClick={() => complete("BANK TRANSFER DETAILS OPEN")}><i>→</i><span><b>BANK TRANSFER</b><small>PERSONAL ACCOUNT DETAILS</small></span></button><button onClick={() => complete("CARD TOP-UP OPEN")}><i>▰</i><span><b>DEBIT CARD</b><small>INSTANT TOP-UP</small></span></button><button onClick={() => complete("PAYOUT ROUTING OPEN")}><i>OF</i><span><b>CREATOR PAYOUT</b><small>ROUTE PLATFORM INCOME</small></span></button></div></>}
-                {action === "borrow" && <><div className="borrow-amount"><span>SAMPLE REQUEST LIMIT</span><b>$24,800</b><small>14 MONTHS VERIFIED / 88 DATA SCORE</small></div><label><span>REQUEST</span><div className="money-input"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /><select><option>USD</option></select></div></label><div className="consent-callout"><b>MINIMUM DISCLOSURE</b><p>SCORE + BAND ONLY. NO HANDLE OR PAYOUT HISTORY.</p></div><button className="sheet-submit" disabled={!Number(amount) || Number(amount) > 24800} onClick={() => complete("LENDER PACKET CREATED")}>CREATE LENDER PACKET ↗</button><p className="sheet-legal">DEMO ONLY. NO CREDIT DECISION OR LOAN.</p></>}
+                {action === "borrow" && <><div className="borrow-amount"><span>SAMPLE REQUEST LIMIT</span><b>$24,800</b><small>14 MONTHS VERIFIED / 88 DATA SCORE</small></div><label><span>REQUEST</span><div className="money-input"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /><select><option>USD</option></select></div></label><div className="consent-callout"><b>MINIMUM DISCLOSURE</b><p>SCORE + BAND ONLY. NO HANDLE OR PAYOUT HISTORY.</p></div><p className="sheet-legal">DEMO ONLY. NO CREDIT DECISION OR LOAN.</p><button className="sheet-submit" disabled={!Number(amount) || Number(amount) > 24800} onClick={() => complete("LENDER PACKET CREATED")}>CREATE LENDER PACKET ↗</button></>}
               </div>
             </div>
           )}

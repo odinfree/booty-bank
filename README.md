@@ -22,9 +22,9 @@ The app has seven working areas.
 - Creator connects payout sources, creates a minimum lender packet, and runs fan rewards, drops, and creator-share programs.
 - Privacy controls disclosure, account authorization, shielded-money status, and the data-access log.
 
-The demo supports working interactions for balance redaction, navigation, transfers, exchange, card controls, payout automation, creator advances, and privacy review. Its Starknet rail is real: browser wallets connect through Get Starknet and Starknet.js, balances are read onchain, AVNU returns live STRK-to-USDC quotes, and a confirmed swap is submitted by the connected wallet. Every fiat rail that needs a licensed operator is labelled `PARTNER` or `ROADMAP`.
+The demo supports working interactions for balance redaction, navigation, transfers, exchange, card controls, payout automation, creator advances, and privacy review. Its Starknet read rail is real: browser wallets connect through Get Starknet and Starknet.js, balances are read onchain, and AVNU returns live STRK-to-USDC quotes. Swap execution stays locked until Booty Bank independently validates every builder-returned call. Every fiat rail that needs a licensed operator is labelled `PARTNER` or `ROADMAP`.
 
-Privy login is implemented as a second Starknet account path. A verified Privy access token reaches the Cloudflare Worker, the Worker creates or reuses one owner-bound Starknet signing key, and Starkzap derives an Argent X v0.5 account. Signing requests are authenticated again and accepted only for the wallet stored against that Privy user. New accounts are shown as counterfactual prefund addresses; the app never deploys one silently.
+Privy social login is a visible preview, not an active account path. The Worker contains owner-bound Starknet wallet creation behind verified Privy access tokens, but the public interface does not call it and no browser signing endpoint exists. Activation requires a transaction policy that binds chain, account, nonce, calls, expiry, and visible user intent before any signing route opens.
 
 The account surface takes its functional benchmark from [Revolut's account, transfer, card, budgeting, and investment categories](https://help.revolut.com/en-CH/help/). Creator cards, fan rewards, community revenue, and drops take their functional benchmark from [Ready](https://www.ready.co/). Booty Bank uses its own product structure and visual system.
 
@@ -47,11 +47,11 @@ The platform, creator handle, legal identity, exact payouts, and underwriting fi
 - 29-felt packed Falcon public key
 - 31-felt direct signature layout
 - invoke, declare, and deploy-account validation
-- SRC5 and SNIP-6 support
+- SRC5 and SRC6 interface discovery
 - contract-caller and legacy-version rejection
-- authenticated self-call key rotation with versioned events
+- key rotation with old-key authorization and new-key proof of possession
 
-The test suite accepts a valid Falcon signature, rejects message tampering, rotates the public key, rejects the former key, and blocks external callers from rotating account authority.
+The test suite accepts a valid Falcon signature, rejects message tampering, verifies the dual-signature rotation path, rejects missing or mismatched new-key proofs, and blocks external callers from rotating account authority.
 
 The Falcon code is experimental and has not received an independent audit. The current target is Starknet Sepolia. Mainnet stays closed until an audit is complete and a separate post-quantum recovery policy works.
 
@@ -72,23 +72,22 @@ npm test
 npm run build
 ```
 
-The current local run passes 22 Cairo tests and 9 web tests. The production web export compiles successfully at desktop and mobile widths.
+The current local run passes 25 Cairo tests, 18 web tests, and 12 Worker tests. The production web export compiles successfully and is visually checked at desktop, short-desktop, and mobile widths.
 
 ## Production deployment
 
 The static Next.js export is deployed by GitHub Actions to GitHub Pages. `https://bootybank.app` is the canonical production URL. Cloudflare manages authoritative DNS, edge HTTPS, and the permanent `www` redirect. The existing GitHub Pages URL remains a working entry point and local development still runs with `npm run dev` from `web/`.
 
-The launch waitlist posts to a narrowly routed Cloudflare Worker at `/api/waitlist`. Signups are stored in the EU-jurisdiction D1 database `booty-bank-waitlist`; only the normalized email address and signup timestamp are retained. The same Worker serves the authenticated Privy endpoints under `/api/wallet/*`. It stores the Privy user-to-wallet mapping, public key, and public address; it never stores a private key or access token.
+The launch waitlist posts to a narrowly routed Cloudflare Worker at `/api/waitlist`. A Cloudflare edge binding limits each client to five attempts per minute before D1 work begins. Signups are stored in the EU-jurisdiction D1 database `booty-bank-waitlist`; only the normalized email address and signup timestamp are retained. The same Worker contains the dormant authenticated Privy wallet-creation endpoint at `/api/wallet/starknet`. It stores the Privy user-to-wallet mapping, public key, and public address; it never stores a private key or access token and exposes no raw-sign endpoint.
 
 For local development, copy `web/.env.example` to `web/.env.local`, run `npm run dev` in `worker/`, and run the web app from `web/`. Apply schema changes with `npx wrangler d1 execute booty-bank-waitlist --remote --file schema.sql` before deploying the Worker.
 
-Privy activation needs three values that are intentionally absent from tracked files:
+Privy wallet-creation activation needs two values that are intentionally absent from tracked files:
 
-- GitHub Pages repository variable `NEXT_PUBLIC_PRIVY_APP_ID`
 - Cloudflare Worker secret `PRIVY_APP_ID`
 - Cloudflare Worker secret `PRIVY_APP_SECRET`
 
-Set Worker secrets with `npx wrangler secret put`; never add them to `wrangler.jsonc`. The public app ID must name the same Privy app as the Worker secrets.
+Set Worker secrets with `npx wrangler secret put`; never add them to `wrangler.jsonc`. Social login remains a placeholder until the signing policy and a fresh security review close.
 
 ## Launch gates
 

@@ -4,8 +4,17 @@ import {
   buildPrivateIncomePacket,
   CORE_MONEY_FEATURES,
   NEOBANK_FEATURES,
+  parseNonNegativeNumber,
   PRIVACY_FEATURES,
 } from "../src/lib/private-packet.mjs";
+
+test("number fields reject invalid values before packet construction", () => {
+  assert.equal(parseNonNegativeNumber("18400"), 18400);
+  assert.equal(parseNonNegativeNumber("0"), 0);
+  assert.equal(parseNonNegativeNumber("-1"), null);
+  assert.equal(parseNonNegativeNumber(""), null);
+  assert.equal(parseNonNegativeNumber("Infinity"), null);
+});
 
 test("public credential excludes creator identity and earnings", () => {
   const packet = buildPrivateIncomePacket();

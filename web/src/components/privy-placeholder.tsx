@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useModalFocus } from "../hooks/use-modal-focus";
 
 export default function PrivyPlaceholder() {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState("DEMO ONLY. NO ACCOUNT CREATED.");
+  const [status, setStatus] = useState("PREVIEW ONLY. NO ACCOUNT CREATED.");
+  const dialogRef = useRef<HTMLElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useModalFocus(open, dialogRef, close);
 
   function preview(method: "GOOGLE" | "EMAIL") {
-    setStatus(`${method} READY WHEN PRIVY KEYS LAND.`);
+    setStatus(`${method} LOCKED UNTIL SIGNING POLICY PASSES.`);
   }
 
   return (
@@ -22,10 +26,10 @@ export default function PrivyPlaceholder() {
         <span className="privy-label-short">LOGIN</span>
       </button>
       {open && (
-        <section className="privy-preview-panel" id="privy-preview-panel" role="dialog" aria-labelledby="privy-preview-title">
+        <section ref={dialogRef} tabIndex={-1} className="privy-preview-panel" id="privy-preview-panel" role="dialog" aria-modal="true" aria-labelledby="privy-preview-title">
           <div className="privy-preview-head">
             <span>PRIVY / PREVIEW</span>
-            <button onClick={() => setOpen(false)} aria-label="Close social login preview">×</button>
+            <button onClick={close} aria-label="Close social login preview">×</button>
           </div>
           <h4 id="privy-preview-title">SIGN IN.</h4>
           <div className="privy-preview-actions">

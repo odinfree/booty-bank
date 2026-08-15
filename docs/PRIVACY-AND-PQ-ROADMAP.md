@@ -18,11 +18,11 @@ The account:
 
 - stores the packed 29-felt Falcon public key;
 - validates the 31-felt direct signature layout against the Starknet transaction hash;
-- supports invoke, declare, deploy-account, signature-checking, SRC5, and SNIP-6 entrypoints;
+- supports invoke, declare, deploy-account, signature-checking, and SRC5/SRC6 interface discovery;
 - blocks contract callers from the execution path;
 - rejects legacy transaction versions;
 - accepts a valid Falcon signature and rejects tampered message data in the test suite;
-- rotates its public key through an authenticated self-call and rejects the former key.
+- rotates its public key only when the transaction carries valid proofs from both the current and proposed Falcon keys.
 
 The account code is experimental and unaudited. The next release gate is an independent audit plus Sepolia deployment evidence.
 
@@ -35,7 +35,7 @@ The web demo includes seven primary-account areas. Home, Payments, Cards, Plan, 
 | Layer | Hidden from the public | Visible or disclosed | Status |
 |---|---|---|---|
 | Income data | Platform identity, handle, exact payouts, underwriting file | Nullifier, commitment, expiry, version | Built |
-| Account authorization | Falcon secret key | Account address, public key, transaction calls | Built on devnet |
+| Account authorization | Falcon secret key | Account address, public key, transaction calls | Built, local tests |
 | Credit review | Full evidence packet | Review band and lender-selected disclosures | Demo |
 | Regulated identity | Creator identity from merchants and the public | Bank, EMI, lender, and required compliance operators | Design |
 | Money movement | Owner link and shielded balances | Pool actions and the route's remaining metadata | Next |
@@ -89,7 +89,7 @@ The product benchmark includes the current [Ready](https://www.ready.co/) accoun
 1. Run the Falcon account and signer end to end on local devnet.
 2. Deploy the account class and a new account on Starknet Sepolia.
 3. Execute a signed Booty Bank credential transaction from that account.
-4. Design and implement a separate post-quantum recovery policy. Authenticated Falcon key rotation is already built.
+4. Design and implement a separate post-quantum recovery policy. Dual-proof Falcon key rotation is already built.
 5. Add wallet integration without moving private key material into the browser.
 6. Complete an independent account and verifier audit.
 7. Publish class hashes, addresses, transactions, gas, and failure tests.

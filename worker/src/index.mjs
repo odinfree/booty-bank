@@ -1,33 +1,22 @@
 import { PrivyClient } from "@privy-io/node";
 
-const ALLOWED_ORIGINS = new Set([
+const PUBLIC_ORIGINS = new Set([
   "https://bootybank.app",
   "https://www.bootybank.app",
   "https://welttowelt.github.io",
+]);
+const LOCAL_ORIGINS = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const WALLET_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
-const FELT_PATTERN = /^0x[0-9a-fA-F]{1,64}$/;
-const STARK_FIELD_PRIME = (1n << 251n) + (17n << 192n) + 1n;
 
 export function normalizeEmail(value) {
   if (typeof value !== "string") return null;
   const email = value.trim().toLowerCase();
   if (!email || email.length > 254 || !EMAIL_PATTERN.test(email)) return null;
   return email;
-}
-
-export function normalizeFelt(value) {
-  if (typeof value !== "string" || !FELT_PATTERN.test(value)) return null;
-  try {
-    if (BigInt(value) >= STARK_FIELD_PRIME) return null;
-  } catch {
-    return null;
-  }
-  return `0x${BigInt(value).toString(16)}`;
 }
 
 function corsHeaders(origin) {
@@ -39,7 +28,7 @@ function corsHeaders(origin) {
     "Vary": "Origin",
     "X-Content-Type-Options": "nosniff",
   };
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  if (origin) {
     headers["Access-Control-Allow-Origin"] = origin;
   }
   return headers;
@@ -55,17 +44,32 @@ async function parseJsonBody(request, maxBytes) {
     return { error: "REQUEST TOO LARGE.", status: 413 };
   }
 
-  let text;
+  const reader = request.body?.getReader();
+  if (!reader) return { error: "INVALID REQUEST.", status: 400 };
+  const chunks = [];
+  let total = 0;
   try {
-    text = await request.text();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        return { error: "REQUEST TOO LARGE.", status: 413 };
+      }
+      chunks.push(value);
+    }
   } catch {
     return { error: "INVALID REQUEST.", status: 400 };
   }
-  if (new TextEncoder().encode(text).byteLength > maxBytes) {
-    return { error: "REQUEST TOO LARGE.", status: 413 };
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
   try {
-    return { body: JSON.parse(text) };
+    return { body: JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) };
   } catch {
     return { error: "INVALID REQUEST.", status: 400 };
   }
@@ -150,41 +154,18 @@ async function handlePrivyWallet(request, env, origin, services) {
   }
 }
 
-async function handlePrivySign(request, env, origin, services) {
-  const auth = await authenticatePrivy(request, env, services);
-  if (auth.error) return json({ message: auth.error }, auth.status, origin);
-
-  const parsed = await parseJsonBody(request, 4_096);
-  if (parsed.error) return json({ message: parsed.error }, parsed.status, origin);
-  const walletId = parsed.body?.walletId;
-  const hash = normalizeFelt(parsed.body?.hash);
-  if (!WALLET_ID_PATTERN.test(walletId ?? "") || !hash) {
-    return json({ message: "INVALID SIGNING REQUEST." }, 400, origin);
-  }
-
-  try {
-    const owned = await env.WAITLIST_DB
-      .prepare("SELECT 1 AS owned FROM privy_starknet_wallets WHERE user_id = ? AND wallet_id = ?")
-      .bind(auth.userId, walletId)
-      .first();
-    if (!owned) return json({ message: "WALLET NOT FOUND." }, 404, origin);
-
-    const signed = await auth.client.wallets().rawSign(walletId, { params: { hash } });
-    if (!signed?.signature) throw new Error("missing signature");
-    return json({ signature: signed.signature }, 200, origin);
-  } catch {
-    return json({ message: "SIGNING TEMPORARILY UNAVAILABLE." }, 503, origin);
-  }
-}
-
 async function handleWaitlist(request, env, origin) {
+  if (env.WAITLIST_RATE_LIMITER) {
+    const clientKey = request.headers.get("CF-Connecting-IP");
+    if (!clientKey) return json({ message: "REQUEST COULD NOT BE VERIFIED." }, 403, origin);
+    const { success } = await env.WAITLIST_RATE_LIMITER.limit({ key: clientKey });
+    if (!success) return json({ message: "TOO MANY REQUESTS. TRY AGAIN LATER." }, 429, origin);
+  }
   const parsed = await parseJsonBody(request, 2_048);
   if (parsed.error) {
     const message = parsed.status === 413 ? parsed.error : "SEND A VALID EMAIL.";
     return json({ message }, parsed.status, origin);
   }
-  if (parsed.body?.company) return json({ message: "YOU ARE ON THE LIST." }, 200, origin);
-
   const email = normalizeEmail(parsed.body?.email);
   if (!email) return json({ message: "ENTER A VALID EMAIL." }, 400, origin);
   try {
@@ -212,15 +193,16 @@ export async function handleRequest(request, env, services = {}) {
     });
   }
 
-  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet" || url.pathname === "/api/wallet/sign";
-  if (!isApiPath) return json({ message: "NOT FOUND." }, 404, origin);
-  if (origin && !ALLOWED_ORIGINS.has(origin)) return json({ message: "ORIGIN NOT ALLOWED." }, 403, origin);
+  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet";
+  if (!isApiPath) return json({ message: "NOT FOUND." }, 404, null);
+  const localRequest = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  const originAllowed = !origin || PUBLIC_ORIGINS.has(origin) || (localRequest && LOCAL_ORIGINS.has(origin));
+  if (!originAllowed) return json({ message: "ORIGIN NOT ALLOWED." }, 403, null);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (request.method !== "POST") return json({ message: "METHOD NOT ALLOWED." }, 405, origin);
 
   if (url.pathname === "/api/waitlist") return handleWaitlist(request, env, origin);
-  if (url.pathname === "/api/wallet/starknet") return handlePrivyWallet(request, env, origin, services);
-  return handlePrivySign(request, env, origin, services);
+  return handlePrivyWallet(request, env, origin, services);
 }
 
 export default { fetch: handleRequest };

@@ -5,13 +5,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://bootybank.app"),
   title: "Booty Bank — Borrow Against Your BBL",
-  description: "One private money account for creator income, spending, credit, and Starknet.",
+  description: "Private creator banking with Falcon-512 post-quantum account authorization on Starknet.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "BOOTY BANK",
-    description: "BORROW AGAINST YOUR BBL.",
+    description: "BORROW AGAINST YOUR BBL. PRIVATE MONEY. POST-QUANTUM AUTH.",
     url: "/",
     siteName: "Booty Bank",
     type: "website",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "BOOTY BANK",
-    description: "BORROW AGAINST YOUR BBL.",
+    description: "BORROW AGAINST YOUR BBL. PRIVATE MONEY. POST-QUANTUM AUTH.",
     images: ["/og-image.png"],
   },
 };

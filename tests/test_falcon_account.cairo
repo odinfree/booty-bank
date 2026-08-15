@@ -16,6 +16,13 @@ fn direct_signature() -> Array<felt252> {
     signature
 }
 
+fn dual_signature() -> Array<felt252> {
+    let mut signature = direct_signature();
+    let mut new_key_signature = direct_signature();
+    signature.append_span(new_key_signature.span());
+    signature
+}
+
 fn deploy_account() -> IBootyFalconAccountDispatcher {
     let mut calldata = array![];
     shake::public_key().serialize(ref calldata);
@@ -41,7 +48,7 @@ fn accepts_genuine_falcon_signature_and_exposes_account_interfaces() {
 }
 
 #[test]
-fn authenticated_self_call_rotates_falcon_key() {
+fn authenticated_self_call_requires_old_and_new_key_proofs() {
     let account = deploy_account();
     assert(
         account.is_valid_signature(shake::msg(), direct_signature()) == starknet::VALIDATED,
@@ -49,17 +56,38 @@ fn authenticated_self_call_rotates_falcon_key() {
     );
 
     start_cheat_caller_address(account.contract_address, account.contract_address);
-    account.rotate_public_key(blake::public_key());
-    assert(account.get_public_key().span() == blake::public_key().span(), 'ROTATION_FAILED');
-    assert(account.get_key_version() == 2, 'VERSION_NOT_BUMPED');
-    assert(account.is_valid_signature(shake::msg(), direct_signature()) == 0, 'OLD_KEY_ACTIVE');
-
+    start_cheat_transaction_hash(account.contract_address, shake::msg());
+    let signature = dual_signature();
+    start_cheat_signature(account.contract_address, signature.span());
     account.rotate_public_key(shake::public_key());
-    assert(account.get_key_version() == 3, 'SECOND_VERSION_BAD');
+    assert(account.get_public_key().span() == shake::public_key().span(), 'ROTATION_FAILED');
+    assert(account.get_key_version() == 2, 'VERSION_NOT_BUMPED');
     assert(
         account.is_valid_signature(shake::msg(), direct_signature()) == starknet::VALIDATED,
-        'RESTORED_KEY_INVALID',
+        'ROTATED_KEY_INVALID',
     );
+}
+
+#[test]
+#[should_panic(expected: 'ROTATION_BAD_PROOF')]
+fn rejects_rotation_without_new_key_proof() {
+    let account = deploy_account();
+    start_cheat_caller_address(account.contract_address, account.contract_address);
+    start_cheat_transaction_hash(account.contract_address, shake::msg());
+    let signature = direct_signature();
+    start_cheat_signature(account.contract_address, signature.span());
+    account.rotate_public_key(blake::public_key());
+}
+
+#[test]
+#[should_panic(expected: 'ROTATION_BAD_PROOF')]
+fn rejects_rotation_when_proof_does_not_match_proposed_key() {
+    let account = deploy_account();
+    start_cheat_caller_address(account.contract_address, account.contract_address);
+    start_cheat_transaction_hash(account.contract_address, shake::msg());
+    let signature = dual_signature();
+    start_cheat_signature(account.contract_address, signature.span());
+    account.rotate_public_key(blake::public_key());
 }
 
 #[test]
@@ -79,6 +107,15 @@ fn validates_transaction_context_with_falcon_signature() {
 
     assert(account.__validate__(array![]) == starknet::VALIDATED, 'INVOKE_NOT_VALIDATED');
     assert(account.__validate_declare__(0x123) == starknet::VALIDATED, 'DECLARE_NOT_VALIDATED');
+}
+
+#[test]
+fn validates_rotation_transaction_with_dual_signature() {
+    let account = deploy_account();
+    start_cheat_transaction_hash(account.contract_address, shake::msg());
+    let signature = dual_signature();
+    start_cheat_signature(account.contract_address, signature.span());
+    assert(account.__validate__(array![]) == starknet::VALIDATED, 'DUAL_SIG_REJECTED');
 }
 
 #[test]

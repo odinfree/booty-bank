@@ -31,7 +31,7 @@ pub trait IBootyFalconAccount<TState> {
 #[starknet::contract(account)]
 pub mod BootyFalconAccount {
     use core::num::traits::Zero;
-    use pqbench_falcon_512::{Falcon512ShakeDirectVerifier, PUBKEY_FELTS};
+    use pqbench_falcon_512::{Falcon512ShakeDirectVerifier, PUBKEY_FELTS, SIG_FELTS_DIRECT};
     use starknet::SyscallResultTrait;
     use starknet::account::Call;
     use starknet::storage::{
@@ -48,6 +48,7 @@ pub mod BootyFalconAccount {
         pub const INVALID_SIGNATURE: felt252 = 'ACCOUNT_BAD_SIG';
         pub const INVALID_PUBLIC_KEY: felt252 = 'ACCOUNT_BAD_KEY';
         pub const ROTATION_NOT_SELF: felt252 = 'ROTATION_NOT_SELF';
+        pub const ROTATION_BAD_PROOF: felt252 = 'ROTATION_BAD_PROOF';
     }
 
     #[storage]
@@ -139,6 +140,15 @@ pub mod BootyFalconAccount {
                 errors::ROTATION_NOT_SELF,
             );
             assert(public_key.len() == PUBKEY_FELTS, errors::INVALID_PUBLIC_KEY);
+            let tx_info = starknet::get_tx_info().unbox();
+            assert(tx_info.signature.len() == SIG_FELTS_DIRECT * 2, errors::ROTATION_BAD_PROOF);
+            let new_key_signature = tx_info.signature.slice(SIG_FELTS_DIRECT, SIG_FELTS_DIRECT);
+            assert(
+                Falcon512ShakeDirectVerifier::verify(
+                    tx_info.transaction_hash, public_key.span(), new_key_signature,
+                ),
+                errors::ROTATION_BAD_PROOF,
+            );
 
             let mut index = 0;
             for felt in public_key {
@@ -156,9 +166,14 @@ pub mod BootyFalconAccount {
     impl InternalImpl of InternalTrait {
         fn validate_transaction(self: @ContractState) -> felt252 {
             let tx_info = starknet::get_tx_info().unbox();
+            let signature = if tx_info.signature.len() == SIG_FELTS_DIRECT * 2 {
+                tx_info.signature.slice(0, SIG_FELTS_DIRECT)
+            } else {
+                tx_info.signature
+            };
             assert(
                 Falcon512ShakeDirectVerifier::verify(
-                    tx_info.transaction_hash, self.read_public_key().span(), tx_info.signature,
+                    tx_info.transaction_hash, self.read_public_key().span(), signature,
                 ),
                 errors::INVALID_SIGNATURE,
             );

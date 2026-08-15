@@ -36,6 +36,24 @@ test("hero display type cannot use collision-prone tracking", async () => {
   assert.doesNotMatch(await source("../src/app/page.tsx"), /INVITATION FILE/);
 });
 
+test("Fable layout directives and sticky behavior stay locked", async () => {
+  const [css, header, modalHook, waitlist] = await Promise.all([
+    source("../src/app/globals.css"),
+    source("../src/components/site-header.tsx"),
+    source("../src/hooks/use-modal-focus.ts"),
+    source("../src/components/waitlist-form.tsx"),
+  ]);
+
+  assert.match(css, /main\s*\{[^}]*overflow:\s*clip/);
+  assert.match(css, /\.site-wordmark img\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px/);
+  assert.match(css, /\.hero-bottomline p\s*\{[^}]*font-size:\s*clamp\(28px,\s*4\.5vw,\s*64px\)/);
+  assert.ok(css.includes(".pq-declaration h2 { font-size: clamp(42px, 11.6vw, 66px)"));
+  assert.match(header, /width="28" height="28"/);
+  assert.match(modalHook, /event\.key === "Escape"/);
+  assert.match(modalHook, /event\.key !== "Tab"/);
+  assert.doesNotMatch(waitlist, /name="company"/);
+});
+
 test("the panel-selected deposit-slot mark ships in the favicon and product chrome", async () => {
   const [icon, header, app] = await Promise.all([
     source("../src/app/icon.svg"),
@@ -50,21 +68,19 @@ test("the panel-selected deposit-slot mark ships in the favicon and product chro
 });
 
 test("Privy social login stays visible without pretending the placeholder is live", async () => {
-  const [control, placeholder, providers, liveWallet] = await Promise.all([
+  const [control, placeholder, providers] = await Promise.all([
     source("../src/components/starknet-wallet-control.tsx"),
     source("../src/components/privy-placeholder.tsx"),
     source("../src/components/app-providers.tsx"),
-    source("../src/components/privy-starknet-wallet.tsx"),
   ]);
 
-  assert.match(control, /PRIVY_APP_ID \? <PrivyStarknetWallet \/> : <PrivyPlaceholder \/>/);
+  assert.match(control, /<PrivyPlaceholder \/>/);
   assert.match(placeholder, /SOCIAL LOGIN/);
   assert.match(placeholder, /GOOGLE/);
   assert.match(placeholder, /EMAIL/);
   assert.match(placeholder, /NO ACCOUNT CREATED/);
-  assert.match(providers, /if \(!PRIVY_APP_ID\) return children/);
-  assert.match(liveWallet, /accountPreset: accountPresets\.argentXV050/);
-  assert.match(liveWallet, /deploy: "never"/);
+  assert.match(providers, /return children/);
+  assert.doesNotMatch(control, /executeSwap/);
 });
 
 test("landing keeps the prototype claim boundaries", async () => {

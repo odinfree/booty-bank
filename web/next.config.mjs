@@ -16,13 +16,6 @@ const nextConfig = {
       "@cartridge/controller": false,
       "@farcaster/mini-app-solana": false,
     };
-    // Privy's optional x402 client reaches Viem's Tempo virtual master pool,
-    // whose runtime-only dynamic import triggers Webpack's static warning.
-    // Booty Bank does not invoke that branch; keep every other warning visible.
-    config.ignoreWarnings = [
-      ...(config.ignoreWarnings ?? []),
-      { module: /virtualMasterPool\.js$/, message: /Critical dependency/ },
-    ];
     return config;
   },
 };
