@@ -71,20 +71,16 @@ main { min-height: 100vh; overflow: hidden; }
 .mosby-hero {
   min-height: min(920px, calc(100svh - 54px));
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: 1fr auto;
   padding: 22px 24px 28px;
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 55%, rgba(255, 255, 255, .035), transparent 36%),
     var(--ink);
 }
-.hero-register { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 9px; }
-.hero-register span:nth-child(2) { text-align: center; }
-.hero-register span:last-child { text-align: right; }
-.mosby-kicker { margin: 48px 0 0; text-align: center; font-size: 10px; font-weight: 700; }
+.hero-title-block { width: 92%; align-self: center; justify-self: center; }
 .mosby-hero h1 {
-  align-self: center;
-  margin: .05em 0 0;
+  margin: 0;
   text-align: center;
   font-size: clamp(112px, 17vw, 260px);
   line-height: .82;
@@ -102,11 +98,12 @@ main { min-height: 100vh; overflow: hidden; }
   z-index: 1;
   min-height: 235px;
   display: grid;
-  grid-template-columns: 90px minmax(260px, 1fr) minmax(220px, 430px);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 30px;
   margin-top: -72px;
-  padding: 74px 28px 28px;
+  /* Bottom padding reserves the band covered by the next layer: 72px overlap + 39px tab + 14px hover lift. */
+  padding: 48px 28px 128px;
   border: 1px solid rgba(23, 23, 23, .8);
   border-bottom: 0;
   border-radius: 38px 38px 0 0;
@@ -136,14 +133,13 @@ main { min-height: 100vh; overflow: hidden; }
 .file-layer:nth-child(2) .file-tab { left: 25%; }
 .file-layer:nth-child(3) .file-tab { left: 50%; }
 .file-layer:nth-child(4) .file-tab { right: 24px; }
-.file-number { font-size: 10px; font-weight: 700; }
-.file-copy { max-width: 560px; font-size: clamp(19px, 2.2vw, 34px); line-height: 1.02; letter-spacing: -.055em; }
+.file-copy { align-self: start; font-size: clamp(38px, 5vw, 76px); line-height: .92; letter-spacing: -.055em; }
 .file-layer > strong { justify-self: end; border-bottom: 1px solid currentColor; padding-bottom: 4px; font-size: 10px; }
 .file-blue { background: var(--blue); }
 .file-green { background: var(--green); }
 .file-purple { background: var(--purple); }
 .file-red { background: var(--red); color: var(--ink); }
-.file-waitlist { min-height: 600px; display: block; padding-top: 70px; }
+.file-waitlist { min-height: 600px; display: block; padding-top: 70px; padding-bottom: 28px; }
 .waitlist-dossier { min-height: 470px; display: grid; grid-template-columns: 1.1fr .9fr; align-items: end; gap: 60px; padding: 10px 4px; border-top: 1px solid rgba(23, 23, 23, .45); }
 .waitlist-dossier > div:first-child > span { font-size: 10px; font-weight: 700; }
 .waitlist-dossier h2 { margin: 130px 0 -.04em -.025em; font-size: clamp(100px, 13vw, 200px); line-height: .8; letter-spacing: -.06em; }
@@ -473,23 +469,21 @@ main { min-height: 100vh; overflow: hidden; }
   .site-header nav { display: none; }
   .site-status { font-size: 9px; }
   .mosby-hero { min-height: calc(100svh - 52px); padding: 16px 12px 18px; }
-  .hero-register { grid-template-columns: 1fr auto; }
-  .hero-register span:nth-child(2) { display: none; }
-  .mosby-kicker { margin-top: 34px; font-size: 9px; }
+  .hero-title-block { width: 100%; }
   .mosby-hero h1 { font-size: clamp(92px, 26vw, 160px); }
   .hero-bottomline { grid-template-columns: 1fr; gap: 18px; }
   .hero-bottomline p { font-size: 21px; }
   .hero-bottomline a { min-width: 0; padding: 14px 0 0; border-top: 1px solid var(--line-light); border-left: 0; }
   .file-cabinet { padding-top: 92px; }
-  .file-layer { min-height: 205px; grid-template-columns: 36px 1fr; gap: 14px; margin-top: -52px; padding: 62px 14px 18px; border-radius: 26px 26px 0 0; }
+  .file-layer { min-height: 205px; grid-template-columns: 1fr auto; gap: 14px; margin-top: -52px; padding: 40px 14px 100px; border-radius: 26px 26px 0 0; }
   .file-layer:nth-child(1) .file-tab, .file-layer:nth-child(2) .file-tab, .file-layer:nth-child(3) .file-tab, .file-layer:nth-child(4) .file-tab { right: auto; left: 12px; }
   .file-layer:nth-child(2) .file-tab { left: 22%; }
   .file-layer:nth-child(3) .file-tab { left: 44%; }
   .file-layer:nth-child(4) .file-tab { left: auto; right: 12px; }
   .file-tab { top: -31px; min-width: 145px; min-height: 32px; padding: 0 14px; border-radius: 18px 18px 0 0; font-size: 9px; }
-  .file-copy { font-size: 19px; }
-  .file-layer > strong { grid-column: 2; justify-self: start; font-size: 9px; }
-  .file-waitlist { min-height: 650px; display: block; }
+  .file-copy { font-size: clamp(31px, 10vw, 44px); }
+  .file-layer > strong { grid-column: 1; justify-self: start; font-size: 9px; }
+  .file-waitlist { min-height: 650px; display: block; padding-bottom: 18px; }
   .waitlist-dossier { min-height: 540px; grid-template-columns: 1fr; gap: 35px; }
   .waitlist-dossier h2 { margin: 75px 0 0; font-size: clamp(84px, 26vw, 132px); }
   .dossier-form { padding: 20px 0 0; border-top: 1px solid rgba(23, 23, 23, .45); border-left: 0; }

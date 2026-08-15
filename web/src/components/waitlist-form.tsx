@@ -33,7 +33,7 @@ export default function WaitlistForm() {
       <label htmlFor="waitlist-email">EMAIL</label>
       <div><input id="waitlist-email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="YOU@DOMAIN.COM" maxLength={254} required /><button type="submit" disabled={state === "submitting"}>{state === "submitting" ? "JOINING..." : "JOIN WAITLIST ↗"}</button></div>
       <div className="waitlist-honeypot" aria-hidden="true"><label htmlFor="waitlist-company">COMPANY</label><input id="waitlist-company" name="company" tabIndex={-1} autoComplete="off" /></div>
-      <p>LAUNCH EMAILS ONLY. EMAIL + SIGNUP TIME. NO FINANCIAL DATA.</p>
+      <p>EMAIL + SIGNUP TIME ONLY.</p>
       <output className={`dossier-status ${state}`} aria-live="polite">{message}</output>
     </form>
   );

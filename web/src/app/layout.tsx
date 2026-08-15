@@ -4,13 +4,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://bootybank.app"),
   title: "Booty Bank / Working Prototype",
-  description: "The private primary money account for OnlyFans creators: spend, exchange, save, invest, earn, and borrow with post-quantum account authorization.",
+  description: "The money account for OnlyFans creators. Working prototype on sample data.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "Booty Bank / Working Prototype",
-    description: "The private primary money account for OnlyFans creators.",
+    description: "The money account for OnlyFans creators.",
     url: "/",
     siteName: "Booty Bank",
     type: "website",

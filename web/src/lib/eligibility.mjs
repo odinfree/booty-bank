@@ -33,7 +33,6 @@ export function previewEligibility(input) {
     evidenceScore,
     previewLimit: Math.max(0, previewLimit),
     band,
-    disclaimer: "Illustrative eligibility preview. Not a credit decision or offer.",
+    disclaimer: "SAMPLE LIMIT. NOT A CREDIT OFFER.",
   };
 }
-
