@@ -1,7 +1,7 @@
-use pqbench_falcon_512::fixtures::{blake, shake};
 use booty_bank::falcon_account::{
     IBootyFalconAccountDispatcher, IBootyFalconAccountDispatcherTrait, ISRC5_ID, ISRC6_ID,
 };
+use pqbench_falcon_512::fixtures::{blake, shake};
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
     start_cheat_signature, start_cheat_transaction_hash, start_cheat_transaction_version,
