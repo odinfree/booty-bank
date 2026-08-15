@@ -24,6 +24,8 @@ pub trait IBootyFalconAccount<TState> {
     fn is_valid_signature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
     fn get_public_key(self: @TState) -> Array<felt252>;
+    fn get_key_version(self: @TState) -> u64;
+    fn rotate_public_key(ref self: TState, public_key: Array<felt252>);
 }
 
 #[starknet::contract(account)]
@@ -32,7 +34,9 @@ pub mod BootyFalconAccount {
     use pqbench_falcon_512::{Falcon512ShakeDirectVerifier, PUBKEY_FELTS};
     use starknet::SyscallResultTrait;
     use starknet::account::Call;
-    use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, Vec, VecTrait};
+    use starknet::storage::{
+        MutableVecTrait, StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
+    };
     use super::{IBootyFalconAccount, ISRC5_ID, ISRC6_ID};
 
     const MIN_TRANSACTION_VERSION: u256 = 1;
@@ -43,11 +47,24 @@ pub mod BootyFalconAccount {
         pub const INVALID_TX_VERSION: felt252 = 'ACCOUNT_BAD_VERSION';
         pub const INVALID_SIGNATURE: felt252 = 'ACCOUNT_BAD_SIG';
         pub const INVALID_PUBLIC_KEY: felt252 = 'ACCOUNT_BAD_KEY';
+        pub const ROTATION_NOT_SELF: felt252 = 'ROTATION_NOT_SELF';
     }
 
     #[storage]
     struct Storage {
         public_key: Vec<felt252>,
+        key_version: u64,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        PublicKeyRotated: PublicKeyRotated,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct PublicKeyRotated {
+        pub key_version: u64,
     }
 
     #[constructor]
@@ -56,6 +73,7 @@ pub mod BootyFalconAccount {
         for felt in public_key {
             self.public_key.push(felt);
         }
+        self.key_version.write(1);
     }
 
     #[abi(embed_v0)]
@@ -109,6 +127,28 @@ pub mod BootyFalconAccount {
 
         fn get_public_key(self: @ContractState) -> Array<felt252> {
             self.read_public_key()
+        }
+
+        fn get_key_version(self: @ContractState) -> u64 {
+            self.key_version.read()
+        }
+
+        fn rotate_public_key(ref self: ContractState, public_key: Array<felt252>) {
+            assert(
+                starknet::get_caller_address() == starknet::get_contract_address(),
+                errors::ROTATION_NOT_SELF,
+            );
+            assert(public_key.len() == PUBKEY_FELTS, errors::INVALID_PUBLIC_KEY);
+
+            let mut index = 0;
+            for felt in public_key {
+                self.public_key.at(index).write(felt);
+                index += 1;
+            }
+
+            let key_version = self.key_version.read() + 1;
+            self.key_version.write(key_version);
+            self.emit(PublicKeyRotated { key_version });
         }
     }
 

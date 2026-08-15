@@ -1,4 +1,4 @@
-use pqbench_falcon_512::fixtures::shake;
+use pqbench_falcon_512::fixtures::{blake, shake};
 use private_creator_account::falcon_account::{
     IBootyFalconAccountDispatcher, IBootyFalconAccountDispatcherTrait, ISRC5_ID, ISRC6_ID,
 };
@@ -37,6 +37,37 @@ fn accepts_genuine_falcon_signature_and_exposes_account_interfaces() {
         'FALCON_REJECTED',
     );
     assert(account.is_valid_signature('WRONG_MSG', direct_signature()) == 0, 'BAD_MSG_ACCEPTED');
+    assert(account.get_key_version() == 1, 'BAD_KEY_VERSION');
+}
+
+#[test]
+fn authenticated_self_call_rotates_falcon_key() {
+    let account = deploy_account();
+    assert(
+        account.is_valid_signature(shake::msg(), direct_signature()) == starknet::VALIDATED,
+        'INITIAL_KEY_INVALID',
+    );
+
+    start_cheat_caller_address(account.contract_address, account.contract_address);
+    account.rotate_public_key(blake::public_key());
+    assert(account.get_public_key().span() == blake::public_key().span(), 'ROTATION_FAILED');
+    assert(account.get_key_version() == 2, 'VERSION_NOT_BUMPED');
+    assert(account.is_valid_signature(shake::msg(), direct_signature()) == 0, 'OLD_KEY_ACTIVE');
+
+    account.rotate_public_key(shake::public_key());
+    assert(account.get_key_version() == 3, 'SECOND_VERSION_BAD');
+    assert(
+        account.is_valid_signature(shake::msg(), direct_signature()) == starknet::VALIDATED,
+        'RESTORED_KEY_INVALID',
+    );
+}
+
+#[test]
+#[should_panic(expected: 'ROTATION_NOT_SELF')]
+fn rejects_public_key_rotation_from_external_caller() {
+    let account = deploy_account();
+    start_cheat_caller_address(account.contract_address, 0x123.try_into().unwrap());
+    account.rotate_public_key(blake::public_key());
 }
 
 #[test]

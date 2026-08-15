@@ -95,6 +95,34 @@ fn rejects_non_verifier() {
 }
 
 #[test]
+fn verifier_can_rotate_authority() {
+    let (_, credential) = setup();
+    let new_verifier = addr(0x502);
+    credential.rotate_verifier(new_verifier);
+
+    assert(credential.get_verifier() == new_verifier, 'ROTATION_FAILED');
+    start_cheat_caller_address(credential.contract_address, new_verifier);
+    credential.publish(0x771, 0xc01, NOW + 1_000, 1);
+    assert(credential.is_active(0x771), 'NEW_VERIFIER_BLOCKED');
+}
+
+#[test]
+#[should_panic(expected: 'ONLY_VERIFIER')]
+fn former_verifier_loses_authority_after_rotation() {
+    let (verifier, credential) = setup();
+    credential.rotate_verifier(addr(0x502));
+    start_cheat_caller_address(credential.contract_address, verifier);
+    credential.publish(0x771, 0xc01, NOW + 1_000, 1);
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_VERIFIER')]
+fn verifier_rotation_rejects_zero_address() {
+    let (_, credential) = setup();
+    credential.rotate_verifier(addr(0));
+}
+
+#[test]
 #[should_panic(expected: 'ZERO_NULLIFIER')]
 fn rejects_zero_nullifier() {
     let (_, credential) = setup();
@@ -143,4 +171,3 @@ fn rejects_revocation_without_credential() {
     let (_, credential) = setup();
     credential.revoke(0x771);
 }
-

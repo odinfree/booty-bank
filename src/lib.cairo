@@ -19,6 +19,7 @@ pub trait IIncomeCredential<TState> {
         version: u64,
     );
     fn revoke(ref self: TState, creator_nullifier: felt252);
+    fn rotate_verifier(ref self: TState, new_verifier: ContractAddress);
     fn get_verifier(self: @TState) -> ContractAddress;
     fn get_credential(self: @TState, creator_nullifier: felt252) -> IncomeCredentialView;
     fn is_active(self: @TState, creator_nullifier: felt252) -> bool;
@@ -61,6 +62,7 @@ pub mod IncomeCredential {
     pub enum Event {
         CredentialPublished: CredentialPublished,
         CredentialRevoked: CredentialRevoked,
+        VerifierRotated: VerifierRotated,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -78,6 +80,14 @@ pub mod IncomeCredential {
         #[key]
         pub creator_nullifier: felt252,
         pub version: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct VerifierRotated {
+        #[key]
+        pub previous_verifier: ContractAddress,
+        #[key]
+        pub new_verifier: ContractAddress,
     }
 
     #[constructor]
@@ -129,6 +139,14 @@ pub mod IncomeCredential {
             assert(version != 0, errors::NOT_FOUND);
             self.revoked.entry(creator_nullifier).write(true);
             self.emit(CredentialRevoked { creator_nullifier, version });
+        }
+
+        fn rotate_verifier(ref self: ContractState, new_verifier: ContractAddress) {
+            assert_verifier(@self);
+            assert(new_verifier.is_non_zero(), errors::ZERO_VERIFIER);
+            let previous_verifier = self.verifier.read();
+            self.verifier.write(new_verifier);
+            self.emit(VerifierRotated { previous_verifier, new_verifier });
         }
 
         fn get_verifier(self: @ContractState) -> ContractAddress {

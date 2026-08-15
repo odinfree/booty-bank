@@ -8,7 +8,7 @@ Booty Bank is a private financial account for OnlyFans creators. The product sta
 
 The `IncomeCredential` Cairo contract stores five public fields: a creator nullifier, a data commitment, an expiry, a version, and revocation state. The platform name, creator handle, legal identity, exact payouts, and underwriting file stay offchain.
 
-The contract enforces verifier-only publishing, a 90-day maximum validity window, monotonic versions, expiry, and revocation.
+The contract enforces verifier-only publishing, a 90-day maximum validity window, monotonic versions, expiry, revocation, and authenticated verifier rotation. The former verifier loses publishing authority as soon as rotation completes.
 
 ### Falcon-512 Starknet account
 
@@ -21,13 +21,14 @@ The account:
 - supports invoke, declare, deploy-account, signature-checking, SRC5, and SNIP-6 entrypoints;
 - blocks contract callers from the execution path;
 - rejects legacy transaction versions;
-- accepts a genuine Falcon signature and rejects tampered message data in the test suite.
+- accepts a valid Falcon signature and rejects tampered message data in the test suite;
+- rotates its public key through an authenticated self-call and rejects the former key.
 
 The account code is experimental and unaudited. The next release gate is an independent audit plus Sepolia deployment evidence.
 
 ### Interactive creator account
 
-The web demo lets a creator edit sample payout history, grant consent, create a private income packet, inspect the public credential, and generate a deterministic lender-review preview. The public packet test fails if platform identity or exact earnings enter the public object.
+The web demo includes seven primary-account areas. Home, Payments, Cards, Plan, Wealth, Creator, and Privacy stay available through one navigation system. A creator can inspect balances and activity, control cards, send sample payments, preview exchange, automate payout splits, connect income, create a private lender packet, run fan perks, and review data access. The public packet test fails if platform identity or exact earnings enter the public object.
 
 ## Privacy architecture
 
@@ -88,7 +89,7 @@ The product benchmark includes the current [Ready](https://www.ready.co/) accoun
 1. Run the Falcon account and signer end to end on local devnet.
 2. Deploy the account class and a new account on Starknet Sepolia.
 3. Execute a signed Booty Bank credential transaction from that account.
-4. Add Falcon key rotation and a separate post-quantum recovery policy.
+4. Design and implement a separate post-quantum recovery policy. Authenticated Falcon key rotation is already built.
 5. Add wallet integration without moving private key material into the browser.
 6. Complete an independent account and verifier audit.
 7. Publish class hashes, addresses, transactions, gas, and failure tests.

@@ -175,10 +175,10 @@ export default function Home() {
             <span>LAYOUT</span><strong>31-FELT DIRECT</strong>
           </div>
           <div className="quantum-copy">
-            <p>TRANSACTIONS ARE AUTHORIZED INSIDE A STARKNET ACCOUNT CONTRACT WITH A REAL FALCON-512 VERIFIER. THE DEMO ACCEPTS A GENUINE SIGNATURE, REJECTS TAMPERING, BLOCKS CONTRACT-CALLER EXECUTION, AND REJECTS LEGACY TRANSACTION VERSIONS.</p>
+            <p>TRANSACTIONS ARE AUTHORIZED INSIDE A STARKNET ACCOUNT CONTRACT WITH A PINNED FALCON-512 VERIFIER. THE DEMO ACCEPTS A VALID SIGNATURE, REJECTS TAMPERING, BLOCKS CONTRACT-CALLER EXECUTION, REJECTS LEGACY TRANSACTION VERSIONS, AND ROTATES THE SIGNING KEY THROUGH AN AUTHENTICATED SELF-CALL.</p>
             <a href="https://github.com/OpenZeppelin/cairo-pq-verifiers" target="_blank" rel="noreferrer">OPEN THE VERIFIER SOURCE ↗</a>
           </div>
-          <div className="quantum-status"><b>17 / 17</b><span>CAIRO TESTS PASS</span><small>EXPERIMENTAL / UNAUDITED / DEVNET BUILD</small></div>
+          <div className="quantum-status"><b>22 / 22</b><span>CAIRO TESTS PASS</span><small>EXPERIMENTAL / UNAUDITED / DEVNET BUILD</small></div>
         </div>
       </section>
 

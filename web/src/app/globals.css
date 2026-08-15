@@ -383,14 +383,14 @@ footer a { color: var(--signal); text-decoration: none; border-bottom: 1px solid
 .recurring-card > div:not(.app-card-head) { min-height: 45px; display: flex; align-items: center; justify-content: space-between; margin: 0 15px; border-bottom: 1px solid rgba(17,17,15,.22); font-size: 8px; }
 .app-disclaimer { margin: 15px 0 0; font-size: 6px; line-height: 1.5; }
 .source-card { padding-bottom: 15px; }
-.source-card > div:not(.app-card-head):not(.creator-proof) { min-height: 72px; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 12px; margin: 0 15px; border-bottom: 1px solid rgba(17,17,15,.22); }
+.source-card > div:not(.app-card-head):not(.income-evidence) { min-height: 72px; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 12px; margin: 0 15px; border-bottom: 1px solid rgba(17,17,15,.22); }
 .source-card > div span b, .source-card > div span small { display: block; }
 .source-card > div span b { margin-bottom: 5px; font-size: 8px; }
 .source-card > div span small { font-size: 6px; }
 .source-card > div strong { font-size: 9px; }
-.creator-proof { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin: 20px 15px 0; padding: 14px; background: var(--signal); }
-.creator-proof span, .creator-proof b { font-size: 8px; }
-.creator-proof small { grid-column: 1 / -1; font-size: 6px; }
+.income-evidence { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin: 20px 15px 0; padding: 14px; background: var(--signal); }
+.income-evidence span, .income-evidence b { font-size: 8px; }
+.income-evidence small { grid-column: 1 / -1; font-size: 6px; }
 .advance-card { padding: 25px; color: var(--paper); background: var(--red) !important; }
 .advance-card > span { font-size: 7px; }
 .advance-card > strong { display: block; width: max-content; margin: 50px 0 20px; font-size: clamp(48px, 6vw, 90px); line-height: .8; letter-spacing: -.08em; }
@@ -538,9 +538,9 @@ footer a { color: var(--signal); text-decoration: none; border-bottom: 1px solid
   footer { flex-direction: column; }
   .credits { text-align: left; white-space: normal; flex-wrap: wrap; }
   .app-index, .product-boundary, .replacement-matrix > .section-index { align-items: start; flex-direction: column; gap: 5px; padding-top: 12px; padding-bottom: 12px; }
-  .bank-shell { width: 100%; min-height: 760px; margin: 0; display: flex; flex-direction: column; border-right: 0; border-left: 0; box-shadow: none; }
-  .bank-content { order: 1; min-height: 700px; }
-  .bank-sidebar { position: sticky; bottom: 0; z-index: 25; order: 2; min-height: 60px; padding: 7px 6px; border-top: 1px solid var(--paper); border-right: 0; }
+  .bank-shell { width: 100%; height: calc(100svh - 51px); min-height: 620px; margin: 0; display: flex; flex-direction: column; border-right: 0; border-left: 0; box-shadow: none; }
+  .bank-content { order: 1; min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .bank-sidebar { position: static; z-index: 25; order: 2; flex: 0 0 60px; min-height: 60px; padding: 7px 6px; border-top: 1px solid var(--paper); border-right: 0; }
   .app-logo, .support-card { display: none; }
   .bank-sidebar nav { display: grid; grid-template-columns: repeat(7, minmax(52px, 1fr)); gap: 3px; overflow-x: auto; }
   .bank-sidebar nav button { min-height: 46px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
