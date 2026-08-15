@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "booty-bank-waitlist",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-08-15",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "bootybank.app/api/waitlist*",
+      "zone_name": "bootybank.app"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "WAITLIST_DB",
+      "database_name": "booty-bank-waitlist",
+      "database_id": "4b36512c-ded7-40f7-b96c-252b3ebdaa48"
+    }
+  ]
+}

@@ -6,4 +6,10 @@
 /web/out/
 /web/node_modules/
 /web/*.tsbuildinfo
+/worker/node_modules/
+/worker/.wrangler/
+/web/.env*
+!/web/.env.example
+/worker/.dev.vars*
+!/worker/.dev.vars.example
 .DS_Store

@@ -89,6 +89,30 @@ main { min-height: 100vh; overflow: hidden; }
 .hero-aside button:hover, .build-button:hover:not(:disabled) { background: var(--red); }
 .hero-stamp { position: absolute; top: 90px; right: 22px; text-align: right; font-size: 9px; line-height: 1.5; }
 
+.waitlist {
+  min-height: 430px;
+  display: grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  border-bottom: 1px solid var(--ink);
+  color: var(--paper);
+  background: var(--red);
+}
+.waitlist-copy { display: flex; flex-direction: column; justify-content: space-between; padding: 22px; border-right: 1px solid rgba(233, 229, 218, 0.5); }
+.waitlist-copy > span { font-size: 9px; font-weight: 700; }
+.waitlist-copy h2 { margin: 0 0 -0.07em -0.045em; font-size: clamp(76px, 10vw, 155px); line-height: 0.76; letter-spacing: -0.09em; }
+.waitlist-form { align-self: end; padding: 22px; }
+.waitlist-form > label { display: block; margin-bottom: 10px; font-size: 8px; font-weight: 700; }
+.waitlist-input { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--paper); }
+.waitlist-input input { min-width: 0; min-height: 64px; border: 0; padding: 0 16px; color: var(--paper); background: transparent; font-size: 16px; text-transform: none; }
+.waitlist-input input::placeholder { color: rgba(233, 229, 218, 0.55); text-transform: uppercase; }
+.waitlist-input button { min-width: 160px; border: 0; border-left: 1px solid var(--paper); padding: 0 16px; color: var(--ink); background: var(--signal); cursor: pointer; font-weight: 700; }
+.waitlist-input button:hover:not(:disabled) { background: var(--paper); }
+.waitlist-input button:disabled { cursor: wait; opacity: 0.6; }
+.waitlist-form > p { margin: 12px 0 0; font-size: 7px; line-height: 1.5; }
+.waitlist-status { min-height: 16px; margin-top: 10px; font-size: 8px; font-weight: 700; }
+.waitlist-status.error { color: var(--signal); }
+.waitlist-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 .section-index, .quantum-kicker { padding: 19px 22px; font-size: 9px; font-weight: 700; border-bottom: 1px solid var(--ink); }
 .account { border-bottom: 1px solid var(--ink); }
 .account-grid { display: grid; grid-template-columns: 220px minmax(420px, 1fr) minmax(320px, 0.72fr); min-height: 520px; }
@@ -498,6 +522,12 @@ footer a { color: var(--signal); text-decoration: none; border-bottom: 1px solid
   .hero h1 { align-self: center; font-size: clamp(66px, 18vw, 124px); }
   .hero-aside { border-left: 0; padding: 0; }
   .hero-stamp { top: 68px; right: 12px; font-size: 7px; }
+  .waitlist { min-height: 580px; grid-template-columns: 1fr; }
+  .waitlist-copy { min-height: 350px; padding: 18px 12px; border-right: 0; border-bottom: 1px solid rgba(233, 229, 218, 0.5); }
+  .waitlist-copy h2 { font-size: clamp(64px, 18vw, 110px); }
+  .waitlist-form { width: 100%; padding: 24px 12px; }
+  .waitlist-input { grid-template-columns: 1fr; }
+  .waitlist-input button { min-height: 54px; border-top: 1px solid var(--paper); border-left: 0; }
   .section-index, .quantum-kicker { padding: 15px 12px; }
   .account-grid { grid-template-columns: 1fr; }
   .account-steps { display: grid; grid-template-columns: repeat(4, 1fr); padding: 0; border-right: 0; border-bottom: 1px solid var(--ink); }

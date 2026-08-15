@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import BankApp from "../components/bank-app";
 import {
   buildPrivateIncomePacket,
@@ -12,12 +12,17 @@ import {
 
 const payoutBars = [54, 62, 58, 71, 64, 83, 78, 89, 84, 93, 87, 96];
 type IncomeInput = typeof SAMPLE_INPUT;
+type WaitlistState = "idle" | "submitting" | "success" | "error";
+
+const WAITLIST_API_URL = process.env.NEXT_PUBLIC_WAITLIST_API_URL ?? "https://bootybank.app/api/waitlist";
 
 export default function Home() {
   const [consent, setConsent] = useState(false);
   const [accountReady, setAccountReady] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [inputs, setInputs] = useState<IncomeInput>({ ...SAMPLE_INPUT });
+  const [waitlistState, setWaitlistState] = useState<WaitlistState>("idle");
+  const [waitlistMessage, setWaitlistMessage] = useState("");
   const packet = useMemo(() => buildPrivateIncomePacket(inputs), [inputs]);
 
   function updateInput(field: keyof IncomeInput, value: string) {
@@ -27,6 +32,36 @@ export default function Home() {
 
   function openDemo() {
     document.querySelector("#account")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function joinWaitlist(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "");
+    const company = String(form.get("company") ?? "");
+
+    setWaitlistState("submitting");
+    setWaitlistMessage("");
+
+    try {
+      const response = await fetch(WAITLIST_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, company }),
+      });
+      const result = await response.json() as { message?: string };
+
+      if (!response.ok) {
+        throw new Error(result.message ?? "JOIN FAILED. TRY AGAIN.");
+      }
+
+      event.currentTarget.reset();
+      setWaitlistState("success");
+      setWaitlistMessage(result.message ?? "YOU ARE ON THE LIST.");
+    } catch (error) {
+      setWaitlistState("error");
+      setWaitlistMessage(error instanceof Error ? error.message : "JOIN FAILED. TRY AGAIN.");
+    }
   }
 
   return (
@@ -51,6 +86,28 @@ export default function Home() {
           <button onClick={openDemo}>OPEN THE DEMO ACCOUNT <span>↘</span></button>
         </div>
         <div className="hero-stamp">18+ CREATOR FINANCE<br />BUILT ON STARKNET</div>
+      </section>
+
+      <section className="waitlist" id="waitlist" aria-labelledby="waitlist-title">
+        <div className="waitlist-copy">
+          <span>PRIVATE BETA / 18+ CREATORS</span>
+          <h2 id="waitlist-title">GET IN<br />BEFORE THE BANKS.</h2>
+        </div>
+        <form className="waitlist-form" onSubmit={joinWaitlist}>
+          <label htmlFor="waitlist-email">EMAIL</label>
+          <div className="waitlist-input">
+            <input id="waitlist-email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="YOU@DOMAIN.COM" maxLength={254} required />
+            <button type="submit" disabled={waitlistState === "submitting"}>
+              {waitlistState === "submitting" ? "JOINING..." : "JOIN WAITLIST ↗"}
+            </button>
+          </div>
+          <div className="waitlist-honeypot" aria-hidden="true">
+            <label htmlFor="waitlist-company">COMPANY</label>
+            <input id="waitlist-company" name="company" tabIndex={-1} autoComplete="off" />
+          </div>
+          <p>LAUNCH EMAILS ONLY. WE STORE YOUR EMAIL + SIGNUP TIME. NO FINANCIAL DATA.</p>
+          <div className={`waitlist-status ${waitlistState}`} role="status" aria-live="polite">{waitlistMessage}</div>
+        </form>
       </section>
 
       <BankApp />

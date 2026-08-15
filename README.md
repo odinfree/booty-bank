@@ -6,7 +6,7 @@ Booty Bank is the primary money account built for OnlyFans creators. The product
 
 The goal is one account. A creator should not need Revolut beside it.
 
-[Open the interactive demo](https://welttowelt.github.io/booty-bank/)
+[Open the interactive demo](https://bootybank.app/)
 
 Booty Bank is a hackathon prototype. It is not a licensed bank, is not affiliated with OnlyFans or Revolut, and does not move funds, issue cards, make credit decisions, or execute investments.
 
@@ -71,6 +71,14 @@ npm run build
 ```
 
 The current local run passes 22 Cairo tests and 9 web tests. The production web export compiles successfully at desktop and mobile widths.
+
+## Production deployment
+
+The static Next.js export is deployed by GitHub Actions to GitHub Pages. `https://bootybank.app` is the canonical production URL. Cloudflare manages authoritative DNS, edge HTTPS, and the permanent `www` redirect. The existing GitHub Pages URL remains a working entry point and local development still runs with `npm run dev` from `web/`.
+
+The launch waitlist posts to a narrowly routed Cloudflare Worker at `/api/waitlist`. Signups are stored in the EU-jurisdiction D1 database `booty-bank-waitlist`; only the normalized email address and signup timestamp are retained. The Worker allowlists the production, GitHub Pages, and local-development origins defined in `worker/src/index.mjs`. It has no runtime secrets or OAuth callbacks.
+
+For local development, copy `web/.env.example` to `web/.env.local`, run `npm run dev` in `worker/`, and run the web app from `web/`. Apply schema changes with `npx wrangler d1 execute booty-bank-waitlist --remote --file schema.sql` before deploying the Worker.
 
 ## Launch gates
 
