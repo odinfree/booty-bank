@@ -97,7 +97,7 @@ main { min-height: 100vh; overflow: clip; }
 .pq-declaration h2 { align-self: center; margin: 0; font-size: clamp(64px, 10.8vw, 176px); line-height: .78; letter-spacing: -.065em; }
 .pq-declaration-foot { display: grid; grid-template-columns: 1fr 280px; align-items: end; padding-top: 20px; border-top: 1px solid var(--ink); }
 .pq-declaration-foot p { margin: 0; font-size: clamp(22px, 2.8vw, 42px); line-height: .9; letter-spacing: -.04em; }
-.pq-declaration-foot a { display: flex; justify-content: space-between; padding: 16px 0 16px 22px; border-left: 1px solid var(--ink); text-decoration: none; font-size: 10px; font-weight: 700; }
+.pq-declaration-foot a { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 16px 22px; border-left: 1px solid var(--ink); text-decoration: none; font-size: 14px; font-weight: 700; }
 .pq-declaration-foot a:hover { color: var(--paper); background: var(--ink); }
 
 .file-cabinet { padding-top: 115px; overflow: hidden; background: var(--ink); }
@@ -667,10 +667,10 @@ main { min-height: 100vh; overflow: clip; }
 .case-details-head { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
 .case-details h1, .case-details h2 { margin: 34px 0 40px; font-size: clamp(44px, 7vw, 96px); line-height: .85; letter-spacing: -.05em; }
 .case-details dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 48px; margin: 0; }
-.case-details dt { padding-top: 14px; border-top: 1px solid var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .06em; }
-.case-details dd { margin: 12px 0 0; max-width: 62ch; font-size: 15px; line-height: 1.55; }
-.case-label { display: inline-block; margin: 14px 12px 0 0; padding: 5px 8px; border: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .06em; }
-.case-link { display: inline-block; margin-top: 14px; padding-bottom: 2px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-decoration: none; }
+.case-details dt { padding-top: 18px; border-top: 1px solid var(--ink); font-size: clamp(16px, 2.2vw, 24px); font-weight: 700; letter-spacing: .02em; }
+.case-details dd { margin: 14px 0 0; max-width: 58ch; font-size: clamp(17px, 1.9vw, 21px); line-height: 1.55; }
+.case-label { display: inline-block; margin: 16px 12px 0 0; padding: 6px 9px; border: 1px solid var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .05em; }
+.case-link { display: inline-block; margin-top: 16px; padding-bottom: 2px; border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .05em; text-decoration: none; }
 .case-link:hover { background: var(--ink); color: var(--paper); }
 #durability { scroll-margin-top: 100px; }
 
