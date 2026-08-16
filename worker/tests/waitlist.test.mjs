@@ -3,11 +3,12 @@ import test from "node:test";
 
 import { handleRequest, normalizeEmail } from "../src/index.mjs";
 
-function mockEnv({ configured = true } = {}) {
+function mockEnv({ configured = true, avnuConfigured = true } = {}) {
   const inserted = [];
   const wallets = new Map();
   const env = {
     ...(configured ? { PRIVY_APP_ID: "app_test", PRIVY_APP_SECRET: "secret_test" } : {}),
+    ...(avnuConfigured ? { AVNU_API_KEY: "avnu_test_secret" } : {}),
     WAITLIST_DB: {
       prepare(sql) {
         return {
@@ -234,4 +235,61 @@ test("raw signing is not exposed to browsers", async () => {
   const { env } = mockEnv();
   const response = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_123", hash: "0xa" }), env, mockPrivy().services);
   assert.equal(response.status, 404);
+});
+
+function paymasterRequest(body, extraHeaders = {}) {
+  return new Request("https://bootybank.app/api/paymaster", {
+    method: "POST",
+    headers: {
+      "CF-Connecting-IP": "203.0.113.10",
+      "Content-Type": "application/json",
+      Origin: "https://bootybank.app",
+      ...extraHeaders,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+test("keeps the AVNU key server-side and proxies sponsored Sepolia requests", async () => {
+  const { env } = mockEnv();
+  const seen = [];
+  const body = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "paymaster_buildTransaction",
+    params: { transaction: { type: "invoke" }, parameters: { fee_mode: { mode: "sponsored" } } },
+  };
+  const response = await handleRequest(paymasterRequest(body), env, {
+    async fetchPaymaster(url, init) {
+      seen.push({ url, key: init.headers["x-paymaster-api-key"], body: JSON.parse(init.body) });
+      return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, result: { type: "invoke" } }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("X-Booty-Bank-Network"), "sepolia");
+  assert.equal(response.headers.get("x-paymaster-api-key"), null);
+  assert.equal(seen[0].url, "https://sepolia.paymaster.avnu.fi");
+  assert.equal(seen[0].key, "avnu_test_secret");
+  assert.deepEqual(seen[0].body, body);
+});
+
+test("rejects unsupported and user-paid paymaster requests", async () => {
+  const { env } = mockEnv();
+  const arbitrary = await handleRequest(paymasterRequest({ jsonrpc: "2.0", id: 1, method: "eth_sendTransaction" }), env);
+  assert.equal(arbitrary.status, 400);
+  const userPaid = await handleRequest(paymasterRequest({
+    jsonrpc: "2.0",
+    id: 2,
+    method: "paymaster_buildTransaction",
+    params: { parameters: { fee_mode: { mode: "default" } } },
+  }), env);
+  assert.equal(userPaid.status, 400);
+});
+
+test("requires the AVNU Worker secret before proxying", async () => {
+  const { env } = mockEnv({ avnuConfigured: false });
+  const response = await handleRequest(paymasterRequest({ jsonrpc: "2.0", id: 1, method: "paymaster_isAvailable" }), env);
+  assert.equal(response.status, 503);
 });

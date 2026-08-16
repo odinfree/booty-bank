@@ -15,6 +15,10 @@
       "zone_name": "bootybank.app"
     },
     {
+      "pattern": "bootybank.app/api/paymaster*",
+      "zone_name": "bootybank.app"
+    },
+    {
       "pattern": "www.bootybank.app/*",
       "zone_name": "bootybank.app"
     }

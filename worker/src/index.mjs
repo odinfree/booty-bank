@@ -9,6 +9,13 @@ const LOCAL_ORIGINS = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);
+const AVNU_SEPOLIA_PAYMASTER_URL = "https://sepolia.paymaster.avnu.fi";
+const PAYMASTER_METHODS = new Set([
+  "paymaster_isAvailable",
+  "paymaster_getSupportedTokens",
+  "paymaster_buildTransaction",
+  "paymaster_executeTransaction",
+]);
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -179,6 +186,49 @@ async function handleWaitlist(request, env, origin) {
   return json({ message: "YOU ARE ON THE LIST." }, 201, origin);
 }
 
+function validPaymasterRequest(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+  if (body.jsonrpc !== "2.0" || !PAYMASTER_METHODS.has(body.method)) return false;
+  if (body.method === "paymaster_isAvailable" || body.method === "paymaster_getSupportedTokens") return true;
+  const mode = body.params?.parameters?.fee_mode?.mode;
+  return mode === "sponsored" || mode === "sponsored_private";
+}
+
+async function handleAvnuPaymaster(request, env, origin, services) {
+  if (!env.AVNU_API_KEY) return json({ message: "AVNU PAYMASTER IS NOT CONFIGURED." }, 503, origin);
+  if (env.WAITLIST_RATE_LIMITER) {
+    const clientKey = request.headers.get("CF-Connecting-IP");
+    if (!clientKey) return json({ message: "REQUEST COULD NOT BE VERIFIED." }, 403, origin);
+    const { success } = await env.WAITLIST_RATE_LIMITER.limit({ key: `paymaster:${clientKey}` });
+    if (!success) return json({ message: "TOO MANY PAYMASTER REQUESTS. TRY AGAIN LATER." }, 429, origin);
+  }
+  const parsed = await parseJsonBody(request, 98_304);
+  if (parsed.error) return json({ message: parsed.error }, parsed.status, origin);
+  if (!validPaymasterRequest(parsed.body)) return json({ message: "PAYMASTER REQUEST NOT ALLOWED." }, 400, origin);
+
+  try {
+    const proxyFetch = services.fetchPaymaster ?? fetch;
+    const upstream = await proxyFetch(AVNU_SEPOLIA_PAYMASTER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paymaster-api-key": env.AVNU_API_KEY,
+      },
+      body: JSON.stringify(parsed.body),
+      signal: AbortSignal.timeout(15_000),
+    });
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: {
+        ...corsHeaders(origin),
+        "X-Booty-Bank-Network": "sepolia",
+      },
+    });
+  } catch {
+    return json({ message: "AVNU PAYMASTER TEMPORARILY UNAVAILABLE." }, 503, origin);
+  }
+}
+
 export async function handleRequest(request, env, services = {}) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin");
@@ -193,7 +243,7 @@ export async function handleRequest(request, env, services = {}) {
     });
   }
 
-  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet";
+  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet" || url.pathname === "/api/paymaster";
   if (!isApiPath) return json({ message: "NOT FOUND." }, 404, null);
   const localRequest = url.hostname === "localhost" || url.hostname === "127.0.0.1";
   const originAllowed = !origin || PUBLIC_ORIGINS.has(origin) || (localRequest && LOCAL_ORIGINS.has(origin));
@@ -202,6 +252,7 @@ export async function handleRequest(request, env, services = {}) {
   if (request.method !== "POST") return json({ message: "METHOD NOT ALLOWED." }, 405, origin);
 
   if (url.pathname === "/api/waitlist") return handleWaitlist(request, env, origin);
+  if (url.pathname === "/api/paymaster") return handleAvnuPaymaster(request, env, origin, services);
   return handlePrivyWallet(request, env, origin, services);
 }
 

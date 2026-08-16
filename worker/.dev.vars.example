@@ -2,3 +2,4 @@
 # .dev.vars is ignored by git. Never commit real credentials.
 PRIVY_APP_ID=
 PRIVY_APP_SECRET=
+AVNU_API_KEY=
