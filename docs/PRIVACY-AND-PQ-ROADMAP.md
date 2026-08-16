@@ -42,7 +42,7 @@ The rail currently supports:
 - proof-free simulation through `strk20PrepareInvoke(actions, true)` before approval;
 - wallet-owned proof generation and submission through `strk20InvokeTransaction`;
 - deterministic Booty Bank shadow-account discovery, including deployed and fundable-before-deployment state;
-- live public STRK balance reads, AVNU STRK-to-USDC quotes, independently validated swap calls, and paymaster execution.
+- live public STRK balance reads, AVNU STRK-to-USDC quotes, independently validated Mainnet swap calls, and user-paid paymaster execution.
 
 Ready and Xverse are the currently documented STRK20-capable wallets. Unsupported wallets stay connected for public reads but receive no simulated private state. The UI states that shielding, unshielding, timing, and shadow-account contents can remain public.
 
@@ -57,7 +57,7 @@ Ready and Xverse are the currently documented STRK20-capable wallets. Unsupporte
 | Money movement | Sender, receiver, token, amount, notes inside the STRK20 pool | Shielding, unshielding, timing, and route metadata | Wallet rail built |
 | App activity | Link from the main wallet to a shadow identity | Shadow-account balances, calls, timing, and app state | Discovery built; execution next |
 | Audit access | Wallet viewing key from the dapp and public observers | Wallet-approved disclosure under a controlled process | Wallet-owned design |
-| Network metadata | Direct creator-to-publish timing link | AVNU paymaster on supported actions; relayer and batching for the rest | Partial |
+| Network metadata | Direct creator-to-publish timing link | AVNU user-paid paymaster on Mainnet; sponsored relay and batching for the rest | Partial |
 
 ## Next build
 
@@ -71,7 +71,7 @@ Use STRK20 shadow accounts for persistent pseudonymous app positions. Nonce `0` 
 
 ### Relayer and paymaster
 
-AVNU paymaster execution is built for the swap rail: Mainnet users can pay gas in STRK and Sepolia can use Booty Bank-sponsored gas through the Worker proxy. Private AVNU swaps still need the browser/server split that keeps the wallet proof client-side and the paymaster key server-side. Credential publishing, non-AVNU actions, batching, and broader relaying remain open.
+AVNU paymaster execution is built for Mainnet swaps with gas paid by the user in STRK. The Sepolia Worker exposes read-only paymaster metadata; sponsored build and execution stay closed until requests use one-time capabilities bound to the account, chain, exact calls, and expiry. Private AVNU swaps still need the browser/server split that keeps the wallet proof client-side and the paymaster key server-side. Credential publishing, non-AVNU actions, batching, and broader relaying remain open.
 
 ### Selective lender disclosure
 
