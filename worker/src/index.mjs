@@ -13,8 +13,6 @@ const AVNU_SEPOLIA_PAYMASTER_URL = "https://sepolia.paymaster.avnu.fi";
 const PAYMASTER_METHODS = new Set([
   "paymaster_isAvailable",
   "paymaster_getSupportedTokens",
-  "paymaster_buildTransaction",
-  "paymaster_executeTransaction",
 ]);
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -188,10 +186,7 @@ async function handleWaitlist(request, env, origin) {
 
 function validPaymasterRequest(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return false;
-  if (body.jsonrpc !== "2.0" || !PAYMASTER_METHODS.has(body.method)) return false;
-  if (body.method === "paymaster_isAvailable" || body.method === "paymaster_getSupportedTokens") return true;
-  const mode = body.params?.parameters?.fee_mode?.mode;
-  return mode === "sponsored" || mode === "sponsored_private";
+  return body.jsonrpc === "2.0" && PAYMASTER_METHODS.has(body.method);
 }
 
 async function handleAvnuPaymaster(request, env, origin, services) {
@@ -248,6 +243,7 @@ export async function handleRequest(request, env, services = {}) {
   const localRequest = url.hostname === "localhost" || url.hostname === "127.0.0.1";
   const originAllowed = !origin || PUBLIC_ORIGINS.has(origin) || (localRequest && LOCAL_ORIGINS.has(origin));
   if (!originAllowed) return json({ message: "ORIGIN NOT ALLOWED." }, 403, null);
+  if (url.pathname === "/api/paymaster" && !origin) return json({ message: "ORIGIN REQUIRED." }, 403, null);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (request.method !== "POST") return json({ message: "METHOD NOT ALLOWED." }, 405, origin);
 

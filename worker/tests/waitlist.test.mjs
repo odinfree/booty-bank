@@ -250,14 +250,13 @@ function paymasterRequest(body, extraHeaders = {}) {
   });
 }
 
-test("keeps the AVNU key server-side and proxies sponsored Sepolia requests", async () => {
+test("keeps the AVNU key server-side and proxies read-only Sepolia paymaster metadata", async () => {
   const { env } = mockEnv();
   const seen = [];
   const body = {
     jsonrpc: "2.0",
     id: 1,
-    method: "paymaster_buildTransaction",
-    params: { transaction: { type: "invoke" }, parameters: { fee_mode: { mode: "sponsored" } } },
+    method: "paymaster_isAvailable",
   };
   const response = await handleRequest(paymasterRequest(body), env, {
     async fetchPaymaster(url, init) {
@@ -275,17 +274,27 @@ test("keeps the AVNU key server-side and proxies sponsored Sepolia requests", as
   assert.deepEqual(seen[0].body, body);
 });
 
-test("rejects unsupported and user-paid paymaster requests", async () => {
+test("rejects all paymaster build and execute requests", async () => {
   const { env } = mockEnv();
-  const arbitrary = await handleRequest(paymasterRequest({ jsonrpc: "2.0", id: 1, method: "eth_sendTransaction" }), env);
-  assert.equal(arbitrary.status, 400);
-  const userPaid = await handleRequest(paymasterRequest({
-    jsonrpc: "2.0",
-    id: 2,
-    method: "paymaster_buildTransaction",
-    params: { parameters: { fee_mode: { mode: "default" } } },
+  for (const method of ["paymaster_buildTransaction", "paymaster_executeTransaction", "eth_sendTransaction"]) {
+    const response = await handleRequest(paymasterRequest({
+      jsonrpc: "2.0",
+      id: 2,
+      method,
+      params: { parameters: { fee_mode: { mode: "sponsored" } } },
+    }), env);
+    assert.equal(response.status, 400);
+  }
+});
+
+test("rejects originless paymaster requests", async () => {
+  const { env } = mockEnv();
+  const response = await handleRequest(new Request("https://bootybank.app/api/paymaster", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "paymaster_isAvailable" }),
   }), env);
-  assert.equal(userPaid.status, 400);
+  assert.equal(response.status, 403);
 });
 
 test("requires the AVNU Worker secret before proxying", async () => {
