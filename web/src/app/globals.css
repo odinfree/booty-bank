@@ -225,15 +225,20 @@ main { min-height: 100vh; overflow: clip; }
 .privy-account-actions .privy-secondary-action { color: var(--ink); background: transparent; }
 .privy-preview-panel p { min-height: 12px; margin: 12px 0 0; font-size: 8px; font-weight: 700; }
 .wallet-inline-error { position: absolute; z-index: 120; top: 40px; right: 0; width: 240px; border: 1px solid var(--ink); padding: 10px; color: var(--paper); background: var(--red); font-size: 9px; }
-.wallet-picker { position: absolute; z-index: 126; top: 42px; right: 0; width: min(300px, calc(100vw - 24px)); border: 1px solid var(--ink); padding: 12px; color: var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink); }
+.wallet-picker { position: absolute; z-index: 126; top: 42px; right: 0; width: min(380px, calc(100vw - 24px)); max-height: min(680px, calc(100vh - 72px)); overflow-y: auto; border: 1px solid var(--ink); padding: 12px; color: var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink); }
 .wallet-picker-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 9px; }
+.wallet-picker-head > div { display: flex; gap: 5px; }
 .wallet-picker-head button { width: 28px; height: 28px; border: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; }
-.wallet-picker > button { width: 100%; min-height: 46px; display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 9px; border: 1px solid var(--ink); border-bottom: 0; padding: 0 10px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; font-size: 10px; font-weight: 700; }
-.wallet-picker > button:last-of-type { border-bottom: 1px solid var(--ink); }
-.wallet-picker > button:hover { color: var(--paper); background: var(--ink); }
+.wallet-picker-group-label { display: block; margin: 14px 0 7px; font-size: 8px; font-weight: 700; }
+.wallet-picker-group-label.secondary { margin-top: 18px; }
+.wallet-picker-list { border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+.wallet-picker-row { width: 100%; min-height: 60px; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 0; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 0 10px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; text-decoration: none; font-size: 10px; font-weight: 700; }
+.wallet-picker-row:hover { color: var(--paper); background: var(--ink); }
+.wallet-picker-row span { display: grid; gap: 4px; }
+.wallet-picker-row small { font-size: 7px; }
 .wallet-picker img { width: 24px; height: 24px; border-radius: 5px; }
-.wallet-picker i { font-style: normal; }
-.wallet-picker p { margin: 18px 2px 4px; font-size: 10px; line-height: 1.4; font-weight: 700; }
+.wallet-picker i { font-style: normal; font-size: 8px; }
+.wallet-picker p { margin: 18px 2px 4px; font-size: 8px; line-height: 1.5; font-weight: 700; }
 .wallet-session { position: relative; display: flex; min-height: 34px; border: 1px solid var(--ink); background: var(--paper); }
 .wallet-session-main { min-width: 215px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; border: 0; padding: 0 10px; color: var(--ink); background: transparent; cursor: pointer; text-decoration: none; }
 .wallet-session-main span { color: var(--green); font-size: 8px; }

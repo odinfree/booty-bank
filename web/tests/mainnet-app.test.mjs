@@ -85,3 +85,14 @@ test("AVNU swap binds execution to the output floor the user reviewed", async ()
   assert.match(swap, /NO WALLET REQUEST IS SENT/);
   assert.doesNotMatch(swap, /CONSENT FIX NEXT/);
 });
+
+test("the wallet picker always leads with actual Starknet wallet choices", async () => {
+  const wallet = await source("../src/components/starknet-wallet-control.tsx");
+
+  assert.match(wallet, /STARKNET WALLETS/);
+  assert.match(wallet, /readyWallet/);
+  assert.match(wallet, /braavos/);
+  assert.match(wallet, /RECOMMENDED/);
+  assert.match(wallet, /OTHER STARKNET CONNECTORS/);
+  assert.match(wallet, /discoveryRefreshRef/);
+});

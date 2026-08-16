@@ -1,6 +1,7 @@
 "use client";
 
 import type { Quote } from "@avnu/avnu-sdk";
+import { braavos, readyWallet } from "@starknet-io/get-starknet-core/wallets";
 import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-wallet-standard/features";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
@@ -39,6 +40,7 @@ type PreparedAvnuSwap = {
 const WALLET_SESSION_KEY = "bootybank.wallet-session.v1";
 const AVNU_PAYMASTER_PROXY = process.env.NEXT_PUBLIC_AVNU_PAYMASTER_URL ?? "https://bootybank.app/api/paymaster";
 const AVNU_MAINNET_PAYMASTER = "https://starknet.paymaster.avnu.fi";
+const RECOMMENDED_STARKNET_WALLETS = [readyWallet, braavos] as const;
 
 const SHADOW_ANONYMIZER: Record<NetworkName, string> = {
   mainnet: "0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7",
@@ -81,6 +83,10 @@ function tokenKey(address: string) {
 
 function walletId(wallet: WalletWithStarknetFeatures) {
   return wallet.features["starknet:walletApi"].id;
+}
+
+function walletDownloadUrl(downloads: Record<string, string>) {
+  return downloads.chrome ?? Object.values(downloads)[0] ?? "https://www.starknet.io/wallets/";
 }
 
 function paymasterForNetwork(network: NetworkName) {
@@ -143,6 +149,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   const providerRef = useRef<RpcProvider | null>(null);
   const walletRef = useRef<WalletWithStarknetFeatures | null>(null);
   const walletEventCleanupRef = useRef<null | (() => void)>(null);
+  const discoveryRefreshRef = useRef<null | (() => void)>(null);
   const privateOperationRef = useRef(false);
   const preparedPrivateActionRef = useRef<PreparedPrivateAction | null>(null);
   const preparedPublicTransferRef = useRef<PreparedPublicTransfer | null>(null);
@@ -312,6 +319,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     void (async () => {
       const { createStore } = await import("@starknet-io/get-starknet-core");
       const store = createStore();
+      discoveryRefreshRef.current = store._refreshInjectedWallets;
       const update = (nextWallets: readonly WalletWithStarknetFeatures[]) => {
         if (!active) return;
         setWallets([...nextWallets]);
@@ -342,6 +350,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       unsubscribe();
       walletEventCleanupRef.current?.();
       accountRef.current?.unsubscribeChange();
+      discoveryRefreshRef.current = null;
       sessionGenerationRef.current += 1;
     };
   }, [attachWallet]);
@@ -365,6 +374,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     } finally {
       setConnecting(false);
     }
+  }
+
+  function openWalletChooser() {
+    if (!chooserOpen) discoveryRefreshRef.current?.();
+    setChooserOpen(!chooserOpen);
   }
 
   async function disconnectNative() {
@@ -642,22 +656,44 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   }
 
   if (!session) {
+    const recommendedWallets = RECOMMENDED_STARKNET_WALLETS.map((information) => ({
+      information,
+      wallet: wallets.find((wallet) => walletId(wallet).toLowerCase() === information.id.toLowerCase()),
+    }));
+    const recommendedIds = new Set(RECOMMENDED_STARKNET_WALLETS.map((wallet) => wallet.id.toLowerCase()));
+    const otherWallets = wallets.filter((wallet) => !recommendedIds.has(walletId(wallet).toLowerCase()));
     return (
       <div className="wallet-connect-block">
-        <button className="wallet-connect-button" onClick={() => setChooserOpen((value) => !value)} disabled={connecting} aria-expanded={chooserOpen}>
+        <button className="wallet-connect-button" onClick={openWalletChooser} disabled={connecting} aria-expanded={chooserOpen}>
           {connecting ? "CONNECTING…" : "CONNECT STARKNET"}
         </button>
         {chooserOpen && (
           <section className="wallet-picker" aria-label="Choose a Starknet wallet">
-            <div className="wallet-picker-head"><b>PRIVATE WALLET API</b><button onClick={() => setChooserOpen(false)} aria-label="Close wallet chooser">×</button></div>
-            {wallets.length > 0 ? wallets.map((wallet) => (
-              <button key={wallet.name} onClick={() => connectWallet(wallet)}>
-                {/* Wallet Standard icons are packaged data URIs, not remote tracking pixels. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={wallet.icon} alt="" />
-                <span>{wallet.name.toUpperCase()}</span><i>↗</i>
-              </button>
-            )) : <p>NO WALLET FOUND. INSTALL READY OR XVERSE FOR STRK20.</p>}
+            <div className="wallet-picker-head"><b>STARKNET WALLETS</b><div><button onClick={() => discoveryRefreshRef.current?.()} aria-label="Refresh Starknet wallets">↻</button><button onClick={() => setChooserOpen(false)} aria-label="Close wallet chooser">×</button></div></div>
+            <span className="wallet-picker-group-label">RECOMMENDED</span>
+            <div className="wallet-picker-list">
+              {recommendedWallets.map(({ information, wallet }) => wallet ? (
+                <button className="wallet-picker-row" key={information.id} onClick={() => connectWallet(wallet)}>
+                  {/* Wallet icons are packaged data URIs, not remote tracking pixels. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={wallet.icon} alt="" /><span>{information.name.toUpperCase()}<small>INSTALLED / MAINNET</small></span><i>CONNECT ↗</i>
+                </button>
+              ) : (
+                <a className="wallet-picker-row" key={information.id} href={walletDownloadUrl(information.downloads)} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={information.icon} alt="" /><span>{information.name.toUpperCase()}<small>STARKNET WALLET</small></span><i>INSTALL ↗</i>
+                </a>
+              ))}
+            </div>
+            {otherWallets.length > 0 && <><span className="wallet-picker-group-label secondary">OTHER STARKNET CONNECTORS</span><div className="wallet-picker-list">
+              {otherWallets.map((wallet) => (
+                <button className="wallet-picker-row" key={`${walletId(wallet)}:${wallet.name}`} onClick={() => connectWallet(wallet)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={wallet.icon} alt="" /><span>{wallet.name.toUpperCase()}<small>WALLET STANDARD</small></span><i>CONNECT ↗</i>
+                </button>
+              ))}
+            </div></>}
+            <p>READY OR BRAAVOS IS RECOMMENDED. STARKZAP HANDLES MAINNET TOKENS, QUOTES, AND TRANSACTION RAILS AFTER CONNECTION.</p>
           </section>
         )}
         {status && <span className="wallet-inline-error" role="status">{status}</span>}
