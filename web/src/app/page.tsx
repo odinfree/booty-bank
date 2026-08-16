@@ -39,7 +39,7 @@ export default function Home() {
             </a>
           </li>
         </ol>
-        <div className="pq-declaration-foot"><p>DURABILITY /<br />POST-QUANTUM.</p><a href="/details/">DETAILS <span>↗</span></a></div>
+        <div className="pq-declaration-foot"><p>STAYS YOURS /<br />POST-QUANTUM.</p><a href="/details/">DETAILS <span>↗</span></a></div>
       </section>
 
       <section className="file-cabinet" aria-label="Booty Bank product files">

@@ -140,7 +140,8 @@ test("landing leads with the problem rows and keeps durability subordinate", asy
   ]) {
     assert.match(page, new RegExp(`<s>${pair[0]}</s> <b>${pair[1]}</b>`));
   }
-  assert.match(page, /DURABILITY \/<br \/>POST-QUANTUM\./);
+  assert.match(page, /STAYS YOURS \/<br \/>POST-QUANTUM\./);
+  assert.doesNotMatch(page, /DURABILITY/);
   assert.match(page, /href="\/details\/">DETAILS/);
   assert.doesNotMatch(page, /POST-QUANTUM<br \/>READY\./);
 
@@ -160,6 +161,7 @@ test("the landing stays lean and detail lives on the details route", async () =>
   assert.match(details, /WHY WOULD A LENDER TRUST THIS\?/);
   assert.match(details, /off the top of platform payouts/);
   assert.match(details, /id="durability"/);
+  assert.match(details, /crypto agile/);
   assert.match(details, /cr3dentials\.xyz/);
   assert.match(details, /potential partner/);
   assert.match(details, /Nothing is integrated yet\./);

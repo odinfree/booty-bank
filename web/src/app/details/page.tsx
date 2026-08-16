@@ -63,8 +63,9 @@ export default function DetailsPage() {
           <div id="durability">
             <dt>HOW LONG DOES THIS HOLD?</dt>
             <dd>
-              Signatures use Falcon-512, a post-quantum scheme. The scheme can be swapped under
-              a live account, before anyone is forced to migrate.
+              Signatures use Falcon-512, a post-quantum scheme. The account is crypto agile,
+              meaning the signature scheme can be swapped under a live account, before anyone is
+              forced to migrate.
               <span className="case-label">FALCON-512 ACCOUNT / BUILT</span>
               <span className="case-label">KEY ROTATION / BUILT</span>
               <span className="case-label">PQ RECOVERY / ROADMAP</span>
