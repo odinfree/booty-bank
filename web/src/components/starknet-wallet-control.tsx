@@ -5,8 +5,8 @@ import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-walle
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
-import { buildStrk20Action, formatTokenAmount } from "../lib/strk20.mjs";
-import type { MainnetAssetSnapshot, MainnetSessionSnapshot } from "./mainnet-account-context";
+import { buildStrk20Action, formatTokenAmount, parseTokenAmount } from "../lib/strk20.mjs";
+import type { MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
 import PrivyPlaceholder from "./privy-placeholder";
 
 type NetworkName = "mainnet" | "sepolia";
@@ -20,6 +20,13 @@ type PreparedPrivateAction = {
   action: STRK20_ACTION;
   chainLiteral: NativeSession["chainLiteral"];
   generation: number;
+};
+type PreparedPublicTransfer = {
+  account: WalletAccountV6;
+  accountAddress: string;
+  call: { contractAddress: string; entrypoint: string; calldata: string[] };
+  generation: number;
+  review: PublicTransferReview;
 };
 
 const WALLET_SESSION_KEY = "bootybank.wallet-session.v1";
@@ -108,13 +115,14 @@ async function nativeSession(account: WalletAccountV6, provider: RpcProvider, wa
   };
 }
 
-function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: NativeSession | null) => void }) {
+function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: NativeSession | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void }) {
   const accountRef = useRef<WalletAccountV6 | null>(null);
   const providerRef = useRef<RpcProvider | null>(null);
   const walletRef = useRef<WalletWithStarknetFeatures | null>(null);
   const walletEventCleanupRef = useRef<null | (() => void)>(null);
   const privateOperationRef = useRef(false);
   const preparedPrivateActionRef = useRef<PreparedPrivateAction | null>(null);
+  const preparedPublicTransferRef = useRef<PreparedPublicTransfer | null>(null);
   const sessionGenerationRef = useRef(0);
   const restoreAttemptRef = useRef(false);
   const [wallets, setWallets] = useState<WalletWithStarknetFeatures[]>([]);
@@ -143,6 +151,10 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
     preparedPrivateActionRef.current = null;
     setPrivatePreviewed(false);
     setPrivateTxHash("");
+  }, []);
+
+  const resetPublicTransfer = useCallback(() => {
+    preparedPublicTransferRef.current = null;
   }, []);
 
   const refreshPrivacy = useCallback(async (account: WalletAccountV6, provider: RpcProvider, nextSession: NativeSession, generation: number) => {
@@ -203,6 +215,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
   const attachWallet = useCallback(async (wallet: WalletWithStarknetFeatures, silent = false, expectedAddress?: string) => {
     const generation = ++sessionGenerationRef.current;
     resetPrivatePreview();
+    resetPublicTransfer();
     const { RpcProvider, WalletAccountV6 } = await import("starknet");
     const walletChain = wallet.accounts[0]?.chains[0];
     const networkCandidates = [walletChain, ...wallet.chains].map((chain) => networkFromChain(chain)).filter((value): value is NetworkName => value !== null);
@@ -264,12 +277,13 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
     walletEventCleanupRef.current = account.onChange(() => {
       sessionGenerationRef.current += 1;
       resetPrivatePreview();
+      resetPublicTransfer();
       setSession(null);
       onSessionChange?.(null);
       void attachWallet(wallet, true).catch(() => setStatus("ACCOUNT REFRESH FAILED."));
     });
     void refreshPrivacy(account, provider, nextSession, generation);
-  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetPrivatePreview]);
+  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetPrivatePreview, resetPublicTransfer]);
 
   useEffect(() => {
     let active = true;
@@ -337,6 +351,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
     const account = accountRef.current;
     sessionGenerationRef.current += 1;
     resetPrivatePreview();
+    resetPublicTransfer();
     walletEventCleanupRef.current?.();
     walletEventCleanupRef.current = null;
     account?.unsubscribeChange();
@@ -389,6 +404,65 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
       setRailBusy(false);
     }
   }
+
+  const previewPublicTransfer = useCallback(async (input: PublicTransferInput): Promise<PublicTransferReview> => {
+    const account = accountRef.current;
+    const currentSession = session;
+    if (!account || !currentSession) throw new Error("CONNECT A MAINNET WALLET.");
+    if (currentSession.network !== "mainnet") throw new Error("MAINNET REQUIRED.");
+    const asset = currentSession.assets.find((candidate) => candidate.symbol === input.symbol);
+    if (!asset || asset.raw === null) throw new Error("BALANCE UNAVAILABLE.");
+    const rawAmount = BigInt(parseTokenAmount(input.amount, asset.decimals));
+    if (rawAmount > BigInt(asset.raw)) throw new Error("AMOUNT EXCEEDS BALANCE.");
+    const { cairo, validateAndParseAddress } = await import("starknet");
+    const recipient = validateAndParseAddress(input.recipient.trim());
+    if (BigInt(recipient) === BigInt(0)) throw new Error("RECIPIENT CANNOT BE ZERO.");
+    const amount = cairo.uint256(rawAmount);
+    const call = {
+      contractAddress: asset.address,
+      entrypoint: "transfer",
+      calldata: [recipient, amount.low.toString(), amount.high.toString()],
+    };
+    const generation = sessionGenerationRef.current;
+    const fee = await account.estimateInvokeFee(call);
+    if (generation !== sessionGenerationRef.current || accountRef.current !== account || session?.address !== currentSession.address) {
+      throw new Error("WALLET CHANGED. START AGAIN.");
+    }
+    const review: PublicTransferReview = {
+      amount: input.amount,
+      recipient,
+      symbol: input.symbol,
+      accountAddress: currentSession.address,
+      fee: `${formatTokenAmount(BigInt(fee.overall_fee), 18, 6)} STRK`,
+      network: "mainnet",
+      reviewId: `${generation}:${Date.now()}:${input.symbol}`,
+      tokenAddress: asset.address,
+    };
+    preparedPublicTransferRef.current = { account, accountAddress: currentSession.address, call, generation, review };
+    return review;
+  }, [session]);
+
+  const submitPublicTransfer = useCallback(async (reviewId: string) => {
+    const prepared = preparedPublicTransferRef.current;
+    if (!prepared || prepared.review.reviewId !== reviewId) throw new Error("REVIEW EXPIRED. START AGAIN.");
+    if (
+      prepared.generation !== sessionGenerationRef.current
+      || accountRef.current !== prepared.account
+      || session?.network !== "mainnet"
+      || tokenKey(session.address) !== tokenKey(prepared.accountAddress)
+    ) {
+      resetPublicTransfer();
+      throw new Error("WALLET CHANGED. START AGAIN.");
+    }
+    resetPublicTransfer();
+    const result = await prepared.account.execute(prepared.call);
+    return { transactionHash: result.transaction_hash };
+  }, [resetPublicTransfer, session]);
+
+  useEffect(() => {
+    onTransferCommandsChange?.({ preview: previewPublicTransfer, submit: submitPublicTransfer });
+    return () => onTransferCommandsChange?.(null);
+  }, [onTransferCommandsChange, previewPublicTransfer, submitPublicTransfer]);
 
   async function executeAvnuSwap() {
     const account = accountRef.current;
@@ -611,10 +685,10 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNe
   );
 }
 
-export default function StarknetWalletControl({ requiredNetwork, onSessionChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: MainnetSessionSnapshot | null) => void } = {}) {
+export default function StarknetWalletControl({ requiredNetwork, onSessionChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: MainnetSessionSnapshot | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void } = {}) {
   return (
     <div className="starknet-wallet-control" aria-label="Starknet wallet controls">
-      <NativeStarknetWallet requiredNetwork={requiredNetwork} onSessionChange={onSessionChange} />
+      <NativeStarknetWallet requiredNetwork={requiredNetwork} onSessionChange={onSessionChange} onTransferCommandsChange={onTransferCommandsChange} />
       <PrivyPlaceholder />
     </div>
   );

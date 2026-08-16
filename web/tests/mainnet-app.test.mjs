@@ -51,3 +51,20 @@ test("the Mainnet shell publishes only wallet-derived asset state", async () => 
   assert.match(receive, /navigator\.clipboard\.writeText\(session\.address\)/);
   assert.doesNotMatch(`${overview}\n${assets}\n${receive}`, /\$\d/);
 });
+
+test("public send binds a reviewed transfer to the exact wallet session", async () => {
+  const [wallet, send] = await Promise.all([
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/app/app/send/page.tsx"),
+  ]);
+
+  assert.match(wallet, /validateAndParseAddress/);
+  assert.match(wallet, /AMOUNT EXCEEDS BALANCE/);
+  assert.match(wallet, /estimateInvokeFee/);
+  assert.match(wallet, /prepared\.generation !== sessionGenerationRef\.current/);
+  assert.match(wallet, /prepared\.account\.execute\(prepared\.call\)/);
+  assert.match(send, /REVIEW TRANSFER/);
+  assert.match(send, /CONFIRM IN WALLET/);
+  assert.match(send, /A TRANSACTION HASH IS NOT FINAL SETTLEMENT/);
+  assert.doesNotMatch(send, /SENT |setCompleted/);
+});

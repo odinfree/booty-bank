@@ -22,7 +22,29 @@ export type MainnetSessionSnapshot = {
   walletName: string;
 };
 
-export const MainnetAccountContext = createContext<{ session: MainnetSessionSnapshot | null }>({ session: null });
+export type PublicTransferInput = {
+  amount: string;
+  recipient: string;
+  symbol: "STRK" | "USDC";
+};
+
+export type PublicTransferReview = PublicTransferInput & {
+  accountAddress: string;
+  fee: string;
+  network: "mainnet";
+  reviewId: string;
+  tokenAddress: string;
+};
+
+export type PublicTransferCommands = {
+  preview(input: PublicTransferInput): Promise<PublicTransferReview>;
+  submit(reviewId: string): Promise<{ transactionHash: string }>;
+};
+
+export const MainnetAccountContext = createContext<{
+  session: MainnetSessionSnapshot | null;
+  transferCommands: PublicTransferCommands | null;
+}>({ session: null, transferCommands: null });
 
 export function useMainnetAccount() {
   return useContext(MainnetAccountContext);
