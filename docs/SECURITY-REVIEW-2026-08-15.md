@@ -16,7 +16,7 @@ The review covered Cairo account authorization, browser wallet and quote paths, 
 | P0 | Falcon rotation could replace the only key without showing control of the new key | Rotation now requires a transaction signature from the current key and a second signature from the proposed key | Valid dual-signature rotation passes. Missing and mismatched proposed-key signatures fail |
 | P1 | Credential verifier authority could not rotate | Added verifier-only authority rotation with zero-address rejection and an event | The replacement verifier publishes and the former verifier fails |
 | P0 | Privy exposed arbitrary hash signing to an authenticated browser | Removed the raw-sign route and active browser integration | The former signing path returns no signing capability |
-| P1 | AVNU builder output could reach wallet execution without an independent call policy | Kept live quotes and locked execution | Source and copy tests reject a public execution path |
+| P1 | AVNU builder output could reach wallet execution without an independent call policy | Added an exact chain/router/approval/token/amount/recipient/minimum-output/fee policy before execution | Mutation tests reject altered calls; execution refetches the quote and rechecks wallet identity |
 | P1 | Request limits were checked after buffering and the waitlist had no edge quota | Added bounded streaming and a five-attempt-per-minute Cloudflare rate-limit binding | Lengthless oversized streams fail before parsing. Excess requests fail before D1 writes |
 
 No SQL injection, credential disclosure, cross-user wallet lookup, contract-caller account bypass, or deployed Falcon account was found.
