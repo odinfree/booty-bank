@@ -125,7 +125,7 @@ test("landing keeps the prototype claim boundaries", async () => {
   ]) {
     assert.ok(footer.includes(boundary), `Missing claim boundary: ${boundary}`);
   }
-  assert.match(accountPage, /LIVE WALLET ACTIONS REQUIRE APPROVAL/);
+  assert.match(accountPage, /NOTHING IS INVENTED BEFORE CONNECTION/);
   assert.doesNotMatch(accountPage, /NO FUNDS MOVE/);
 });
 
