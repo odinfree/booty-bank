@@ -3,7 +3,7 @@
 import type { Quote } from "@avnu/avnu-sdk";
 import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-wallet-standard/features";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet10";
+import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { buildStrk20Action, formatTokenAmount } from "../lib/strk20.mjs";
 import PrivyPlaceholder from "./privy-placeholder";
 
@@ -154,7 +154,7 @@ function NativeStarknetWallet() {
       ];
       let nextShadow: ShadowAccount | null = null;
       try {
-        const { hash } = await import("starknet10");
+        const { hash } = await import("starknet");
         const commitment = await account.strk20ShadowAccountCommitment("BOOTY BANK", "0x0");
         const anonymizer = SHADOW_ANONYMIZER[nextSession.network];
         const classHashResult = await provider.callContract({
@@ -198,7 +198,7 @@ function NativeStarknetWallet() {
   const attachWallet = useCallback(async (wallet: WalletWithStarknetFeatures, silent = false, expectedAddress?: string) => {
     const generation = ++sessionGenerationRef.current;
     resetPrivatePreview();
-    const { RpcProvider, WalletAccountV6 } = await import("starknet10");
+    const { RpcProvider, WalletAccountV6 } = await import("starknet");
     const walletChain = wallet.accounts[0]?.chains[0];
     const networkCandidates = [walletChain, ...wallet.chains].map((chain) => networkFromChain(chain)).filter((value): value is NetworkName => value !== null);
     let network = networkCandidates[0];

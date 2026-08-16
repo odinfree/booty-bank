@@ -1,4 +1,4 @@
-import type { STRK20_ACTION } from "starknet10";
+import type { STRK20_ACTION } from "starknet";
 
 export function parseTokenAmount(value: string, decimals: number): string;
 export function formatTokenAmount(rawValue: string | bigint, decimals: number, maximumFractionDigits?: number): string;
