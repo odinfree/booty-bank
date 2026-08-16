@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { MainnetAccountContext, type MainnetSessionSnapshot } from "./mainnet-account-context";
 import StarknetWalletControl from "./starknet-wallet-control";
 
 const primary = [
@@ -26,8 +27,10 @@ function routeActive(pathname: string, item: { href: string; routes?: string[] }
 
 export default function MainnetAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [session, setSession] = useState<MainnetSessionSnapshot | null>(null);
 
   return (
+    <MainnetAccountContext.Provider value={{ session }}>
     <main className="mainnet-app">
       <header className="mainnet-topbar">
         <Link className="mainnet-brand" href="/" aria-label="Booty Bank home">
@@ -35,7 +38,7 @@ export default function MainnetAppShell({ children }: { children: ReactNode }) {
           <span>BOOTY BANK</span>
         </Link>
         <div className="mainnet-network" aria-label="Required network"><span>NETWORK</span><b>STARKNET MAINNET</b></div>
-        <div className="mainnet-wallet"><StarknetWalletControl /></div>
+        <div className="mainnet-wallet"><StarknetWalletControl requiredNetwork="mainnet" onSessionChange={setSession} /></div>
         <Link className="mainnet-exit" href="/">EXIT APP ×</Link>
       </header>
 
@@ -66,5 +69,6 @@ export default function MainnetAppShell({ children }: { children: ReactNode }) {
         ))}
       </nav>
     </main>
+    </MainnetAccountContext.Provider>
   );
 }

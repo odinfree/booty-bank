@@ -31,3 +31,23 @@ test("partner products have explicit non-live states", async () => {
   assert.match(copy, /DEMO TOOL/);
   assert.doesNotMatch(copy, /setCompleted|SAMPLE PAYMENT|CARD FLOW OPEN/);
 });
+
+test("the Mainnet shell publishes only wallet-derived asset state", async () => {
+  const [wallet, context, overview, assets, receive] = await Promise.all([
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/components/mainnet-account-context.tsx"),
+    source("../src/app/app/page.tsx"),
+    source("../src/app/app/assets/page.tsx"),
+    source("../src/app/app/receive/page.tsx"),
+  ]);
+
+  assert.match(wallet, /requiredNetwork/);
+  assert.match(wallet, /SWITCH WALLET TO/);
+  assert.match(wallet, /readAsset\("STRK"/);
+  assert.match(wallet, /readAsset\("USDC"/);
+  assert.match(context, /MainnetSessionSnapshot/);
+  assert.match(overview, /session\.assets\.map/);
+  assert.match(assets, /session\.assets\.map/);
+  assert.match(receive, /navigator\.clipboard\.writeText\(session\.address\)/);
+  assert.doesNotMatch(`${overview}\n${assets}\n${receive}`, /\$\d/);
+});

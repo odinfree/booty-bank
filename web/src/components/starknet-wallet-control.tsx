@@ -6,18 +6,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
 import { buildStrk20Action, formatTokenAmount } from "../lib/strk20.mjs";
+import type { MainnetAssetSnapshot, MainnetSessionSnapshot } from "./mainnet-account-context";
 import PrivyPlaceholder from "./privy-placeholder";
 
 type NetworkName = "mainnet" | "sepolia";
-type NativeSession = {
-  address: string;
-  balance: string;
-  chainLiteral: "SN_MAIN" | "SN_SEPOLIA";
-  network: NetworkName;
-  strkAddress: string;
-  usdcAddress: string;
-  walletName: string;
-};
+type NativeSession = MainnetSessionSnapshot;
 type PrivateBalance = { symbol: "STRK" | "USDC"; amount: string };
 type PrivateActionKind = "deposit" | "transfer" | "withdraw";
 type ShadowAccount = { address: string; balance: string; deployment: "deployed" | "undeployed" | "unknown" };
@@ -88,31 +81,34 @@ async function nativeSession(account: WalletAccountV6, provider: RpcProvider, wa
   if (!network) throw new Error("UNSUPPORTED STARKNET NETWORK.");
   const chainId = ChainId.fromFelt252(feltChainId);
   const tokens = getPresets(chainId);
-  let balance = "— STRK";
-  try {
-    const result = await provider.callContract({
-      contractAddress: tokens.STRK.address,
-      entrypoint: "balance_of",
-      calldata: [account.address],
-    });
-    const low = BigInt(result[0] ?? 0);
-    const high = BigInt(result[1] ?? 0);
-    balance = Amount.fromRaw(low + (high << BigInt(128)), tokens.STRK).toFormatted(true);
-  } catch {
-    // A connected wallet remains usable when a public RPC balance read is temporarily unavailable.
+  async function readAsset(symbol: MainnetAssetSnapshot["symbol"], token: typeof tokens.STRK, decimals: number): Promise<MainnetAssetSnapshot> {
+    try {
+      const result = await provider.callContract({ contractAddress: token.address, entrypoint: "balance_of", calldata: [account.address] });
+      const raw = BigInt(result[0] ?? 0) + (BigInt(result[1] ?? 0) << BigInt(128));
+      return { address: token.address, amount: Amount.fromRaw(raw, token).toFormatted(true), decimals, raw: raw.toString(), symbol };
+    } catch {
+      return { address: token.address, amount: null, decimals, raw: null, symbol };
+    }
   }
+  const assets = await Promise.all([
+    readAsset("STRK", tokens.STRK, 18),
+    readAsset("USDC", tokens.USDC, 6),
+  ]);
+  const balance = assets.find((asset) => asset.symbol === "STRK")?.amount ?? "— STRK";
   return {
     address: account.address,
+    assets,
     balance,
     chainLiteral: chainId.toLiteral(),
     network,
+    refreshedAt: Date.now(),
     strkAddress: tokens.STRK.address,
     usdcAddress: tokens.USDC.address,
     walletName,
   };
 }
 
-function NativeStarknetWallet() {
+function NativeStarknetWallet({ requiredNetwork, onSessionChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: NativeSession | null) => void }) {
   const accountRef = useRef<WalletAccountV6 | null>(null);
   const providerRef = useRef<RpcProvider | null>(null);
   const walletRef = useRef<WalletWithStarknetFeatures | null>(null);
@@ -210,7 +206,7 @@ function NativeStarknetWallet() {
     const { RpcProvider, WalletAccountV6 } = await import("starknet");
     const walletChain = wallet.accounts[0]?.chains[0];
     const networkCandidates = [walletChain, ...wallet.chains].map((chain) => networkFromChain(chain)).filter((value): value is NetworkName => value !== null);
-    let network = networkCandidates[0];
+    let network = requiredNetwork && networkCandidates.includes(requiredNetwork) ? requiredNetwork : networkCandidates[0];
     if (!network) throw new Error("WALLET NETWORK IS NOT MAINNET OR SEPOLIA.");
     const { networks } = await import("starkzap");
     let rpcUrl = process.env.NEXT_PUBLIC_STARKNET_RPC_URL || networks[network].rpcUrl;
@@ -223,6 +219,10 @@ function NativeStarknetWallet() {
     if (!connectedNetwork) {
       account.unsubscribeChange();
       throw new Error("CONNECTED WALLET NETWORK IS NOT MAINNET OR SEPOLIA.");
+    }
+    if (requiredNetwork && connectedNetwork !== requiredNetwork) {
+      account.unsubscribeChange();
+      throw new Error(`SWITCH WALLET TO ${requiredNetwork.toUpperCase()}.`);
     }
     if (expectedAddress && tokenKey(account.address) !== tokenKey(expectedAddress)) {
       account.unsubscribeChange();
@@ -254,6 +254,7 @@ function NativeStarknetWallet() {
     providerRef.current = provider;
     walletRef.current = wallet;
     setSession(nextSession);
+    onSessionChange?.(nextSession);
     setChooserOpen(false);
     setStatus("");
     setQuote(null);
@@ -263,10 +264,12 @@ function NativeStarknetWallet() {
     walletEventCleanupRef.current = account.onChange(() => {
       sessionGenerationRef.current += 1;
       resetPrivatePreview();
+      setSession(null);
+      onSessionChange?.(null);
       void attachWallet(wallet, true).catch(() => setStatus("ACCOUNT REFRESH FAILED."));
     });
     void refreshPrivacy(account, provider, nextSession, generation);
-  }, [refreshPrivacy, resetPrivatePreview]);
+  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetPrivatePreview]);
 
   useEffect(() => {
     let active = true;
@@ -344,6 +347,7 @@ function NativeStarknetWallet() {
       providerRef.current = null;
       walletRef.current = null;
       setSession(null);
+      onSessionChange?.(null);
       setQuote(null);
       setSwapTxHash("");
       setPanelOpen(false);
@@ -607,10 +611,10 @@ function NativeStarknetWallet() {
   );
 }
 
-export default function StarknetWalletControl() {
+export default function StarknetWalletControl({ requiredNetwork, onSessionChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: MainnetSessionSnapshot | null) => void } = {}) {
   return (
     <div className="starknet-wallet-control" aria-label="Starknet wallet controls">
-      <NativeStarknetWallet />
+      <NativeStarknetWallet requiredNetwork={requiredNetwork} onSessionChange={onSessionChange} />
       <PrivyPlaceholder />
     </div>
   );
