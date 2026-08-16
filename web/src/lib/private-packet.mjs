@@ -13,6 +13,7 @@ export const PRIVACY_FEATURES = Object.freeze([
   { name: "FALCON-512 CONTRACT", status: "LOCAL TESTS", layer: "ACCOUNT" },
   { name: "EXACT EARNINGS OFFCHAIN", status: "BUILT", layer: "DATA" },
   { name: "SELECTIVE LENDER PACKET", status: "DEMO", layer: "CREDIT" },
+  { name: "SOURCE-ROUTED REPAYMENT", status: "PARTNER", layer: "CREDIT" },
   { name: "STRK20 WALLET RAIL", status: "BUILT", layer: "MONEY" },
   { name: "WALLET-OWNED NOTE DISCOVERY", status: "BUILT", layer: "WALLET" },
   { name: "SHADOW ACCOUNT DISCOVERY", status: "BUILT", layer: "ACCOUNT GRAPH" },

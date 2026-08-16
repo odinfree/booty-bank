@@ -358,6 +358,7 @@ main { min-height: 100vh; overflow: clip; }
 .rules-list div span i { width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
 .rules-list div span i.ops { background: var(--blue); }
 .rules-list div span i.save { background: var(--green); }
+.rules-list div span i.loan { background: var(--purple); }
 .rules-list > div small { text-align: right; font-size: 9px; }
 .insight-banner { min-height: 75px; display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 20px; margin-top: 12px; padding: 0 18px; color: var(--paper); background: var(--blue); }
 .insight-banner span, .insight-banner button { font-size: 9px; }
@@ -664,7 +665,7 @@ main { min-height: 100vh; overflow: clip; }
 /* The details (Q&A / SEO section) */
 .case-details { padding: 72px 24px 90px; background: var(--paper); color: var(--ink); }
 .case-details-head { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
-.case-details h2 { margin: 34px 0 40px; font-size: clamp(44px, 7vw, 96px); line-height: .85; letter-spacing: -.05em; }
+.case-details h1, .case-details h2 { margin: 34px 0 40px; font-size: clamp(44px, 7vw, 96px); line-height: .85; letter-spacing: -.05em; }
 .case-details dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 48px; margin: 0; }
 .case-details dt { padding-top: 14px; border-top: 1px solid var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .06em; }
 .case-details dd { margin: 12px 0 0; max-width: 62ch; font-size: 15px; line-height: 1.55; }

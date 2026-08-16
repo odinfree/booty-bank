@@ -129,7 +129,7 @@ test("landing keeps the prototype claim boundaries", async () => {
   assert.doesNotMatch(accountPage, /NO FUNDS MOVE/);
 });
 
-test("landing leads with the case file and keeps durability subordinate", async () => {
+test("landing leads with the problem rows and keeps durability subordinate", async () => {
   const page = await source("../src/app/page.tsx");
 
   assert.match(page, /THE ACCOUNT<br \/>THAT CAN&apos;T<br \/>DUMP YOU\./);
@@ -141,20 +141,50 @@ test("landing leads with the case file and keeps durability subordinate", async 
     assert.match(page, new RegExp(`<s>${pair[0]}</s> <b>${pair[1]}</b>`));
   }
   assert.match(page, /DURABILITY \/<br \/>POST-QUANTUM\./);
-  assert.doesNotMatch(page, /OPEN SECURITY FILE/);
+  assert.match(page, /href="\/details\/">DETAILS/);
   assert.doesNotMatch(page, /POST-QUANTUM<br \/>READY\./);
 
   const caseSection = page.match(/className="pq-declaration"[\s\S]*?<\/ol>/)?.[0] ?? "";
-  assert.ok(caseSection.length > 0, "case rows section not found");
+  assert.ok(caseSection.length > 0, "problem rows section not found");
   assert.doesNotMatch(caseSection, /QUANTUM|FALCON/i);
-  assert.match(page, /THE PACKET OMITS: FEED \/ FAN LIST \/ LEGAL NAME/);
-  assert.match(page, /id="durability"/);
-  assert.match(page, /SOURCE DOCUMENT \/ @METACHASER24/);
+});
+
+test("the landing stays lean and detail lives on the details route", async () => {
+  const [page, details] = await Promise.all([
+    source("../src/app/page.tsx"),
+    source("../src/app/details/page.tsx"),
+  ]);
+
+  assert.doesNotMatch(page, /case-details/);
+  assert.match(details, /THE PACKET OMITS: FEED \/ FAN LIST \/ LEGAL NAME/);
+  assert.match(details, /WHY WOULD A LENDER TRUST THIS\?/);
+  assert.match(details, /off the top of platform payouts/);
+  assert.match(details, /id="durability"/);
+  assert.match(details, /IDEA \/ @METACHASER24/);
+  assert.match(details, /canonical: "\/details\/"/);
+
+  const visible = `${page}\n${details}`;
+  for (const dossier of ["CASE FILE", "READ THE FILE", "SOURCE DOCUMENT", "OPEN SECURITY FILE", "INVITATION FILE"]) {
+    assert.equal(visible.includes(dossier), false, `Dossier framing returned: ${dossier}`);
+  }
+});
+
+test("the borrow flow shows source-routed repayment", async () => {
+  const [app, packet] = await Promise.all([
+    source("../src/components/bank-app.tsx"),
+    source("../src/lib/private-packet.mjs"),
+  ]);
+
+  assert.match(app, /REPAYS AT SOURCE/);
+  assert.match(app, /advanceActive && /);
+  assert.match(app, /setAdvanceActive\(true\)/);
+  assert.match(packet, /SOURCE-ROUTED REPAYMENT/);
 });
 
 test("visible product copy avoids the rejected long slogans", async () => {
   const files = await Promise.all([
     source("../src/app/page.tsx"),
+    source("../src/app/details/page.tsx"),
     source("../src/app/credit/page.tsx"),
     source("../src/app/privacy/page.tsx"),
     source("../src/components/bank-app.tsx"),
