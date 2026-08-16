@@ -395,11 +395,12 @@ function NativeStarknetWallet() {
     setSwapTxHash("");
     setQuoteLabel("REFRESHING QUOTE…");
     try {
+      if (currentSession.network !== "mainnet") throw new Error("MAINNET SWAP ONLY.");
       const [{ getQuotes, quoteToCalls }, { Amount, ChainId, getPresets }] = await Promise.all([
         import("@avnu/avnu-sdk"),
         import("starkzap"),
       ]);
-      const chainId = currentSession.network === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
+      const chainId = ChainId.MAINNET;
       const tokens = getPresets(chainId);
       const amount = Amount.parse(sellAmount, tokens.STRK).toBase();
       const quotes = await getQuotes({
@@ -417,7 +418,16 @@ function NativeStarknetWallet() {
         takerAddress: currentSession.address,
         executeApprove: true,
       });
-      const calls = validateAvnuSwapCalls({ built, quote: freshQuote, takerAddress: currentSession.address, slippage: SWAP_SLIPPAGE });
+      const calls = validateAvnuSwapCalls({
+        built,
+        quote: freshQuote,
+        takerAddress: currentSession.address,
+        slippage: SWAP_SLIPPAGE,
+        expectedChainId: chainId.toFelt252(),
+        expectedSellTokenAddress: tokens.STRK.address,
+        expectedBuyTokenAddress: tokens.USDC.address,
+        expectedSellAmount: amount,
+      });
       if (
         generation !== sessionGenerationRef.current
         || accountRef.current !== account
@@ -426,9 +436,7 @@ function NativeStarknetWallet() {
       setQuote(freshQuote);
       setQuoteLabel("APPROVE GAS + SWAP IN WALLET…");
       const result = await account.executePaymasterTransaction(calls, {
-        feeMode: currentSession.network === "sepolia"
-          ? { mode: "sponsored" }
-          : { mode: "default", gasToken: currentSession.strkAddress },
+        feeMode: { mode: "default", gasToken: currentSession.strkAddress },
         timeBounds: { executeBefore: Math.floor(Date.now() / 1000) + 300 },
       });
       setSwapTxHash(result.transaction_hash);
@@ -561,15 +569,16 @@ function NativeStarknetWallet() {
           </div>
           {panelMode === "swap" ? (
             <>
-              <label><span>SELL STRK</span><input value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setQuote(null); setSwapTxHash(""); }} inputMode="decimal" maxLength={32} /></label>
+              <label><span>SELL STRK</span><input value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setQuote(null); setSwapTxHash(""); }} inputMode="decimal" maxLength={32} disabled={railBusy} /></label>
               <div className="wallet-quote"><span>GET USDC</span><b>{quoteLabel || "GET A LIVE AVNU QUOTE"}</b></div>
               <div className="avnu-quote-grid">
-                <span>GAS</span><b>{session.network === "sepolia" ? "BOOTY BANK SPONSORED" : "PAY IN STRK"}</b>
+                <span>GAS</span><b>{session.network === "sepolia" ? "QUOTE ONLY" : "PAY IN STRK"}</b>
                 <span>SLIPPAGE CAP</span><b>0.5%</b>
                 {quote && <><span>ROUTE</span><b>{[...new Set(quote.routes.map((route) => route.name))].join(" + ") || "AVNU"}</b><span>PRICE IMPACT</span><b>{(quote.priceImpact / 100).toFixed(2)}%</b></>}
               </div>
               {!quote && <button className="wallet-rail-action" onClick={fetchAvnuQuote} disabled={railBusy}>QUOTE ON AVNU ↗</button>}
-              {quote && <button className="wallet-rail-action private-confirm" onClick={executeAvnuSwap} disabled={railBusy}>SWAP WITH AVNU PAYMASTER ↗</button>}
+              {quote && session.network === "mainnet" && <button className="wallet-rail-action private-confirm" onClick={executeAvnuSwap} disabled={railBusy}>SWAP WITH AVNU PAYMASTER ↗</button>}
+              {quote && session.network === "sepolia" && <button className="wallet-rail-action" disabled>MAINNET SWAP ONLY</button>}
               {swapTxHash && <a className="privacy-tx-link" href={`${session.network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online"}/tx/${swapTxHash}`} target="_blank" rel="noreferrer">VIEW SWAP ↗</a>}
             </>
           ) : (

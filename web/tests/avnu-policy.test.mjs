@@ -30,9 +30,19 @@ const built = {
     },
   ],
 };
+const policyInput = {
+  built,
+  quote,
+  takerAddress,
+  slippage: 0.005,
+  expectedChainId: AVNU_MAINNET_CHAIN_ID,
+  expectedSellTokenAddress: sellToken,
+  expectedBuyTokenAddress: buyToken,
+  expectedSellAmount: quote.sellAmount,
+};
 
 test("accepts the exact fresh AVNU STRK-to-USDC call shape", () => {
-  assert.equal(validateAvnuSwapCalls({ built, quote, takerAddress, slippage: 0.005 }).length, 2);
+  assert.equal(validateAvnuSwapCalls(policyInput).length, 2);
 });
 
 test("rejects altered AVNU approval, recipient, minimum output, and router calls", () => {
@@ -45,11 +55,22 @@ test("rejects altered AVNU approval, recipient, minimum output, and router calls
   for (const mutate of mutations) {
     const copy = structuredClone(built);
     mutate(copy);
-    assert.throws(() => validateAvnuSwapCalls({ built: copy, quote, takerAddress, slippage: 0.005 }), /REJECTED/);
+    assert.throws(() => validateAvnuSwapCalls({ ...policyInput, built: copy }), /REJECTED/);
   }
 });
 
 test("rejects stale-chain and implausible value quotes", () => {
-  assert.throws(() => validateAvnuSwapCalls({ built: { ...built, chainId: "0x1" }, quote, takerAddress, slippage: 0.005 }), /MAINNET/);
-  assert.throws(() => validateAvnuSwapCalls({ built, quote: { ...quote, buyAmountInUsd: 5 }, takerAddress, slippage: 0.005 }), /VALUE DEVIATION/);
+  assert.throws(() => validateAvnuSwapCalls({ ...policyInput, built: { ...built, chainId: "0x1" } }), /MAINNET/);
+  assert.throws(() => validateAvnuSwapCalls({ ...policyInput, quote: { ...quote, buyAmountInUsd: 5 } }), /VALUE DEVIATION/);
+});
+
+test("rejects a quote substituted away from the user's exact intent", () => {
+  const mutations = [
+    { expectedSellTokenAddress: "0x999" },
+    { expectedBuyTokenAddress: "0x999" },
+    { expectedSellAmount: quote.sellAmount + 1n },
+  ];
+  for (const mutation of mutations) {
+    assert.throws(() => validateAvnuSwapCalls({ ...policyInput, ...mutation }), /INTENT/);
+  }
 });

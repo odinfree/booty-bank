@@ -17,12 +17,23 @@ function sameFelt(left, right) {
   return felt(left) === felt(right);
 }
 
-export function validateAvnuSwapCalls({ built, quote, takerAddress, slippage }) {
+export function validateAvnuSwapCalls({ built, quote, takerAddress, slippage, expectedChainId, expectedSellTokenAddress, expectedBuyTokenAddress, expectedSellAmount }) {
   if (!Number.isFinite(slippage) || slippage <= 0 || slippage > 0.03) {
     throw new Error("SLIPPAGE POLICY REJECTED.");
   }
-  if (!sameFelt(built.chainId, AVNU_MAINNET_CHAIN_ID) || !sameFelt(quote.chainId, AVNU_MAINNET_CHAIN_ID)) {
+  if (
+    !sameFelt(expectedChainId, AVNU_MAINNET_CHAIN_ID)
+    || !sameFelt(built.chainId, expectedChainId)
+    || !sameFelt(quote.chainId, expectedChainId)
+  ) {
     throw new Error("AVNU EXECUTION IS MAINNET ONLY.");
+  }
+  if (
+    !sameFelt(quote.sellTokenAddress, expectedSellTokenAddress)
+    || !sameFelt(quote.buyTokenAddress, expectedBuyTokenAddress)
+    || BigInt(quote.sellAmount) !== BigInt(expectedSellAmount)
+  ) {
+    throw new Error("AVNU QUOTE INTENT REJECTED.");
   }
   if (!Array.isArray(built.calls) || built.calls.length !== 2) {
     throw new Error("AVNU CALL COUNT REJECTED.");

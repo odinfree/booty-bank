@@ -8,4 +8,8 @@ export function validateAvnuSwapCalls(input: {
   quote: Quote;
   takerAddress: string;
   slippage: number;
+  expectedChainId: string;
+  expectedSellTokenAddress: string;
+  expectedBuyTokenAddress: string;
+  expectedSellAmount: bigint;
 }): Call[];
