@@ -42,7 +42,7 @@ The rail currently supports:
 - proof-free simulation through `strk20PrepareInvoke(actions, true)` before approval;
 - wallet-owned proof generation and submission through `strk20InvokeTransaction`;
 - deterministic Booty Bank shadow-account discovery, including deployed and fundable-before-deployment state;
-- live public STRK balance reads, AVNU STRK-to-USDC quotes, independently validated Mainnet swap calls, and user-paid paymaster execution.
+- live public STRK, native USDC, ETH, and WBTC balance reads, bidirectional AVNU quotes, independently validated Mainnet swap calls, and user-paid paymaster execution.
 
 Ready and Xverse are the currently documented STRK20-capable wallets. Unsupported wallets stay connected for public reads but receive no simulated private state. The UI states that shielding, unshielding, timing, and shadow-account contents can remain public.
 

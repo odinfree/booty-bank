@@ -9,10 +9,10 @@ The first credible release is intentionally narrow:
 | Capability | Release state |
 | --- | --- |
 | External wallet connection | Live |
-| Mainnet STRK and USDC balances | Live |
+| Mainnet STRK, native USDC, ETH, and WBTC balances | Live |
 | Receive | Live |
 | Public Starknet send | Build now |
-| AVNU STRK to USDC swap | Live after displayed-quote consent is bound to execution |
+| AVNU bidirectional core-asset swap | Live with displayed-quote consent bound to execution |
 | STRK20 shield, private send, and unshield | Live only when the connected wallet exposes the API |
 | Privy embedded account | Configured preview until deploy, sign, recovery, and policy work end to end |
 | Cards and creator payouts | Partner required |

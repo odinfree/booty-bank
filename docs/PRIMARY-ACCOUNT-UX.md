@@ -40,7 +40,7 @@ Private mode redacts balances and transaction amounts across every screen. The p
 
 - Falcon-512 authorizes the Starknet account.
 - The income credential limits public financial data.
-- STRK20 shielded movement and private sub-accounts remain planned work.
+- STRK20 shield, private transfer, and unshield are live through capable wallets. Private sub-accounts remain planned work.
 
 The access log names the reader, fields, time, and access status. Disclosure should be visible and reversible wherever the underlying partner permits revocation.
 
