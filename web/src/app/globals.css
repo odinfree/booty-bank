@@ -217,6 +217,12 @@ main { min-height: 100vh; overflow: clip; }
 .privy-preview-actions button { min-height: 48px; display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 7px; border: 1px solid var(--ink); padding: 0 9px; color: var(--paper); background: var(--ink); cursor: pointer; text-align: left; font-size: 9px; font-weight: 700; }
 .privy-preview-actions button:hover { color: var(--ink); background: var(--paper); }
 .privy-preview-actions i { font-style: normal; font-size: 14px; }
+.privy-account-actions { display: grid; gap: 6px; }
+.privy-account-actions button, .privy-account-actions strong { min-height: 48px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--ink); padding: 0 9px; color: var(--paper); background: var(--ink); font-size: 9px; font-weight: 700; }
+.privy-account-actions button { cursor: pointer; }
+.privy-account-actions button:hover, .privy-account-actions button:focus-visible { color: var(--ink); background: var(--paper); }
+.privy-account-actions button:disabled { cursor: wait; opacity: .65; }
+.privy-account-actions .privy-secondary-action { color: var(--ink); background: transparent; }
 .privy-preview-panel p { min-height: 12px; margin: 12px 0 0; font-size: 8px; font-weight: 700; }
 .wallet-inline-error { position: absolute; z-index: 120; top: 40px; right: 0; width: 240px; border: 1px solid var(--ink); padding: 10px; color: var(--paper); background: var(--red); font-size: 9px; }
 .wallet-picker { position: absolute; z-index: 126; top: 42px; right: 0; width: min(300px, calc(100vw - 24px)); border: 1px solid var(--ink); padding: 12px; color: var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink); }

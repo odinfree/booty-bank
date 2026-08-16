@@ -73,7 +73,7 @@ test("the panel-selected deposit-slot mark ships in the favicon and product chro
   assert.doesNotMatch(icon, /#c8ff35/);
 });
 
-test("Privy social login stays visible without pretending the placeholder is live", async () => {
+test("Privy social login is live only when configured and otherwise stays an honest preview", async () => {
   const [control, placeholder, providers] = await Promise.all([
     source("../src/components/starknet-wallet-control.tsx"),
     source("../src/components/privy-placeholder.tsx"),
@@ -85,6 +85,11 @@ test("Privy social login stays visible without pretending the placeholder is liv
   assert.match(placeholder, /GOOGLE/);
   assert.match(placeholder, /EMAIL/);
   assert.match(placeholder, /NO ACCOUNT CREATED/);
+  assert.match(placeholder, /getAccessToken/);
+  assert.match(placeholder, /CREATE STARKNET ACCOUNT/);
+  assert.match(placeholder, /ACCOUNT NOT DEPLOYED/);
+  assert.match(providers, /<PrivyProvider/);
+  assert.match(providers, /loginMethods: \["google", "email"\]/);
   assert.match(providers, /return children/);
   assert.doesNotMatch(control, /executeSwap/);
 });
