@@ -40,7 +40,13 @@ type PreparedAvnuSwap = {
 const WALLET_SESSION_KEY = "bootybank.wallet-session.v1";
 const AVNU_PAYMASTER_PROXY = process.env.NEXT_PUBLIC_AVNU_PAYMASTER_URL ?? "https://bootybank.app/api/paymaster";
 const AVNU_MAINNET_PAYMASTER = "https://starknet.paymaster.avnu.fi";
-const RECOMMENDED_STARKNET_WALLETS = [readyWallet, braavos] as const;
+const XVERSE_WALLET = {
+  id: "xverse",
+  name: "Xverse",
+  icon: "/xverse-wallet.svg",
+  downloads: { chrome: "https://www.xverse.app/download" },
+} as const;
+const RECOMMENDED_STARKNET_WALLETS = [readyWallet, braavos, XVERSE_WALLET] as const;
 
 const SHADOW_ANONYMIZER: Record<NetworkName, string> = {
   mainnet: "0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7",
@@ -83,6 +89,11 @@ function tokenKey(address: string) {
 
 function walletId(wallet: WalletWithStarknetFeatures) {
   return wallet.features["starknet:walletApi"].id;
+}
+
+function walletMatches(wallet: WalletWithStarknetFeatures, information: { id: string; name: string }) {
+  return walletId(wallet).toLowerCase() === information.id.toLowerCase()
+    || wallet.name.toLowerCase() === information.name.toLowerCase();
 }
 
 function walletDownloadUrl(downloads: Record<string, string>) {
@@ -658,10 +669,9 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   if (!session) {
     const recommendedWallets = RECOMMENDED_STARKNET_WALLETS.map((information) => ({
       information,
-      wallet: wallets.find((wallet) => walletId(wallet).toLowerCase() === information.id.toLowerCase()),
+      wallet: wallets.find((wallet) => walletMatches(wallet, information)),
     }));
-    const recommendedIds = new Set(RECOMMENDED_STARKNET_WALLETS.map((wallet) => wallet.id.toLowerCase()));
-    const otherWallets = wallets.filter((wallet) => !recommendedIds.has(walletId(wallet).toLowerCase()));
+    const otherWallets = wallets.filter((wallet) => !RECOMMENDED_STARKNET_WALLETS.some((information) => walletMatches(wallet, information)));
     return (
       <div className="wallet-connect-block">
         <button className="wallet-connect-button" onClick={openWalletChooser} disabled={connecting} aria-expanded={chooserOpen}>
@@ -693,7 +703,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
                 </button>
               ))}
             </div></>}
-            <p>READY OR BRAAVOS IS RECOMMENDED. STARKZAP HANDLES MAINNET TOKENS, QUOTES, AND TRANSACTION RAILS AFTER CONNECTION.</p>
+            <p>READY, BRAAVOS, OR XVERSE. STARKZAP HANDLES MAINNET TOKENS, QUOTES, AND TRANSACTION RAILS AFTER CONNECTION.</p>
           </section>
         )}
         {status && <span className="wallet-inline-error" role="status">{status}</span>}

@@ -92,6 +92,8 @@ test("the wallet picker always leads with actual Starknet wallet choices", async
   assert.match(wallet, /STARKNET WALLETS/);
   assert.match(wallet, /readyWallet/);
   assert.match(wallet, /braavos/);
+  assert.match(wallet, /XVERSE_WALLET/);
+  assert.match(wallet, /https:\/\/www\.xverse\.app\/download/);
   assert.match(wallet, /RECOMMENDED/);
   assert.match(wallet, /OTHER STARKNET CONNECTORS/);
   assert.match(wallet, /discoveryRefreshRef/);
