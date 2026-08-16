@@ -160,7 +160,9 @@ test("the landing stays lean and detail lives on the details route", async () =>
   assert.match(details, /WHY WOULD A LENDER TRUST THIS\?/);
   assert.match(details, /off the top of platform payouts/);
   assert.match(details, /id="durability"/);
-  assert.match(details, /IDEA \/ @METACHASER24/);
+  assert.match(details, /cr3dentials\.xyz/);
+  assert.match(details, /potential partner/);
+  assert.match(details, /Nothing is integrated yet\./);
   assert.match(details, /canonical: "\/details\/"/);
 
   const visible = `${page}\n${details}`;

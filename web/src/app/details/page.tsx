@@ -14,7 +14,7 @@ export default function DetailsPage() {
     <main className="dossier-route">
       <SiteHeader />
       <section className="case-details" id="details" aria-labelledby="details-title">
-        <div className="case-details-head"><span>05 / THE DETAILS</span><span>IDEA / @METACHASER24 / AUG 14 2026</span></div>
+        <div className="case-details-head"><span>05 / THE DETAILS</span></div>
         <h1 id="details-title">THE DETAILS.</h1>
         <dl>
           <div>
@@ -27,8 +27,8 @@ export default function DetailsPage() {
           <div>
             <dt>HOW DO I BORROW AGAINST CREATOR INCOME?</dt>
             <dd>
-              The lender packet packages verified payout months as a credit report a lender can
-              price.
+              Creator income is real money that credit models read as risk. The lender packet
+              packages verified payout months as a credit report a lender can price.
               <span className="case-label">THE PACKET OMITS: FEED / FAN LIST / LEGAL NAME</span>
             </dd>
           </div>
@@ -49,6 +49,15 @@ export default function DetailsPage() {
               A fan and a landlord should never see the same account. Shielded balances, a
               public card face. The link between them stays private by default.
               <a className="case-link" href="/privacy/">OPEN PRIVACY ↗</a>
+            </dd>
+          </div>
+          <div>
+            <dt>WHO RUNS THE LENDING RAILS?</dt>
+            <dd>
+              A licensed lender funds advances and handles collections. Cr3dentials builds this
+              stack today, from source verification to repayment at the payout, and is a
+              potential partner. Nothing is integrated yet.
+              <a className="case-link" href="https://cr3dentials.xyz">CR3DENTIALS.XYZ ↗</a>
             </dd>
           </div>
           <div id="durability">
