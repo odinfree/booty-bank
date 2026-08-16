@@ -98,3 +98,22 @@ test("the wallet picker always leads with actual Starknet wallet choices", async
   assert.match(wallet, /OTHER STARKNET CONNECTORS/);
   assert.match(wallet, /discoveryRefreshRef/);
 });
+
+test("Mainnet account and transaction links open on Starkscan", async () => {
+  const [explorer, wallet, receive, send, swap] = await Promise.all([
+    source("../src/lib/starknet-explorer.mjs"),
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/app/app/receive/page.tsx"),
+    source("../src/app/app/send/page.tsx"),
+    source("../src/app/app/swap/page.tsx"),
+  ]);
+
+  assert.match(explorer, /https:\/\/starkscan\.co/);
+  assert.match(explorer, /https:\/\/sepolia\.voyager\.online/);
+  assert.match(wallet, /explorerAddressUrl/);
+  assert.match(wallet, /explorerTransactionUrl/);
+  for (const page of [receive, send, swap]) {
+    assert.match(page, /starkscan\.co/);
+    assert.doesNotMatch(page, /voyager\.online/);
+  }
+});

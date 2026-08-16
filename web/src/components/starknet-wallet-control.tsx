@@ -6,6 +6,7 @@ import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-walle
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
+import { explorerAddressUrl, explorerName, explorerTransactionUrl } from "../lib/starknet-explorer.mjs";
 import { buildStrk20Action, formatTokenAmount, parseTokenAmount } from "../lib/strk20.mjs";
 import type { AvnuSwapCommands, AvnuSwapReview, MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
 import PrivyPlaceholder from "./privy-placeholder";
@@ -62,11 +63,6 @@ function networkFromChain(chainId?: string): NetworkName | null {
   if (["SN_MAIN", "STARKNET:SN_MAIN", "0X534E5F4D41494E", "STARKNET:0X534E5F4D41494E"].includes(normalized)) return "mainnet";
   if (["SN_SEPOLIA", "STARKNET:SN_SEPOLIA", "0X534E5F5345504F4C4941", "STARKNET:0X534E5F5345504F4C4941"].includes(normalized)) return "sepolia";
   return null;
-}
-
-function voyagerAddressUrl(network: NetworkName, address: string) {
-  const host = network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online";
-  return `${host}/contract/${address}`;
 }
 
 function errorLabel(error: unknown, fallback: string) {
@@ -718,7 +714,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
         <b>{shortAddress(session.address)}</b>
         <strong>{session.balance}</strong>
       </button>
-      <a href={voyagerAddressUrl(session.network, session.address)} target="_blank" rel="noreferrer" aria-label="View wallet on Voyager">↗</a>
+      <a href={explorerAddressUrl(session.network, session.address)} target="_blank" rel="noreferrer" aria-label={`View wallet on ${explorerName(session.network)}`}>↗</a>
       <button onClick={disconnectNative} aria-label="Disconnect Starknet wallet">×</button>
       {panelOpen && (
         <section className="wallet-rail-panel">
@@ -737,7 +733,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
           {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
           {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy}>CONFIRM IN WALLET ↗</button>}
           <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
-          {privateTxHash && <a className="privacy-tx-link" href={`${session.network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online"}/tx/${privateTxHash}`} target="_blank" rel="noreferrer">VIEW TRANSACTION ↗</a>}
+          {privateTxHash && <a className="privacy-tx-link" href={explorerTransactionUrl(session.network, privateTxHash)} target="_blank" rel="noreferrer">VIEW ON {explorerName(session.network)} ↗</a>}
           {shadow && <div className="shadow-account-card"><span>BOOTY BANK SHADOW / 00</span><b>{shortAddress(shadow.address)}</b><small>{shadow.deployment === "deployed" ? "DEPLOYED" : shadow.deployment === "undeployed" ? "FUNDABLE BEFORE DEPLOYMENT" : "DEPLOYMENT NOT VERIFIED"} / {shadow.balance} STRK</small></div>}
           <p className="privacy-edge-note">PRIVATE INSIDE THE POOL. SHIELDING, UNSHIELDING, AND TIMING REMAIN PUBLIC.</p>
         </section>

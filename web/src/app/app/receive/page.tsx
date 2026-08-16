@@ -14,6 +14,6 @@ export default function ReceivePage() {
     window.setTimeout(() => setCopied(false), 1500);
   }
   return <MainnetRouteState index="03" eyebrow="MOVE" title="RECEIVE ON MAINNET." description="USE ONLY ON STARKNET MAINNET. VERIFY THE FULL ADDRESS BEFORE SENDING A LARGE AMOUNT." status={session ? "ADDRESS LIVE" : "WALLET REQUIRED"} actions={[{ href: "/app/send/", label: "SEND" }, { href: "/app/assets/", label: "ASSETS" }]}>
-    {session && <section className="mainnet-receive-card"><span>YOUR STARKNET MAINNET ADDRESS</span><b>{session.address}</b><div><button onClick={copyAddress}>{copied ? "COPIED ✓" : "COPY ADDRESS"}</button><a href={`https://voyager.online/contract/${session.address}`} target="_blank" rel="noreferrer">VERIFY ON VOYAGER ↗</a></div></section>}
+    {session && <section className="mainnet-receive-card"><span>YOUR STARKNET MAINNET ADDRESS</span><b>{session.address}</b><div><button onClick={copyAddress}>{copied ? "COPIED ✓" : "COPY ADDRESS"}</button><a href={`https://starkscan.co/contract/${session.address}`} target="_blank" rel="noreferrer">VERIFY ON STARKSCAN ↗</a></div></section>}
   </MainnetRouteState>;
 }

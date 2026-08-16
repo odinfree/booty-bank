@@ -85,7 +85,7 @@ export default function SwapPage() {
         </div>}
         {error && <p className="mainnet-transfer-error" role="alert">{error}</p>}
       </div> : <div className="mainnet-transfer-receipt">
-        <span>SUBMITTED TO STARKNET</span><h2>SWAP SUBMITTED.</h2><p>THE WALLET RETURNED A TRANSACTION HASH. VERIFY ACCEPTANCE OR REVERT ON VOYAGER.</p><b>{transactionHash}</b><a href={`https://voyager.online/tx/${transactionHash}`} target="_blank" rel="noreferrer">TRACK ON VOYAGER ↗</a>
+        <span>SUBMITTED TO STARKNET</span><h2>SWAP SUBMITTED.</h2><p>THE WALLET RETURNED A TRANSACTION HASH. VERIFY ACCEPTANCE OR REVERT ON STARKSCAN.</p><b>{transactionHash}</b><a href={`https://starkscan.co/tx/${transactionHash}`} target="_blank" rel="noreferrer">TRACK ON STARKSCAN ↗</a>
       </div>}
     </section>}
   </MainnetRouteState>;
