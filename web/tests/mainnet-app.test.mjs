@@ -82,6 +82,10 @@ test("AVNU swap binds execution to the output floor the user reviewed", async ()
   assert.match(wallet, /status: "repriced"/);
   assert.match(policy, /expectedMinimumOutput/);
   assert.match(swap, /MINIMUM RECEIVED/);
+  assert.match(swap, /sellSymbol/);
+  assert.match(swap, /buySymbol/);
+  assert.match(swap, /FLIP PAIR/);
+  assert.match(wallet, /validateSwapPair/);
   assert.match(swap, /NO WALLET REQUEST IS SENT/);
   assert.doesNotMatch(swap, /CONSENT FIX NEXT/);
 });
@@ -124,8 +128,7 @@ test("STRK20 controls shield, transfer, and unshield selectable tokens through a
   assert.match(wallet, /walletV6\.supportedWalletApi/);
   assert.match(wallet, /compareVersions/);
   assert.match(wallet, /privateSymbol/);
-  assert.match(wallet, /<option value="STRK">STRK<\/option>/);
-  assert.match(wallet, /<option value="USDC">USDC<\/option>/);
+  assert.match(wallet, /CORE_TOKEN_REGISTRY\.map/);
   assert.match(wallet, /strk20PrepareInvoke/);
   assert.match(wallet, /strk20InvokeTransaction/);
   assert.match(wallet, /TWO WALLET STEPS/);

@@ -8,12 +8,14 @@ import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
 import { explorerAddressUrl, explorerName, explorerTransactionUrl } from "../lib/starknet-explorer.mjs";
 import { buildStrk20Action, formatTokenAmount, parseTokenAmount } from "../lib/strk20.mjs";
-import type { AvnuSwapCommands, AvnuSwapReview, MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
+import { assertStarkzapPreset, CORE_TOKEN_REGISTRY, validateSwapPair } from "../lib/token-registry.mjs";
+import type { CoreToken, CoreTokenSymbol } from "../lib/token-registry.mjs";
+import type { AvnuSwapCommands, AvnuSwapInput, AvnuSwapReview, MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
 import PrivyPlaceholder from "./privy-placeholder";
 
 type NetworkName = "mainnet" | "sepolia";
 type NativeSession = MainnetSessionSnapshot;
-type PrivateBalance = { symbol: "STRK" | "USDC"; amount: string };
+type PrivateBalance = { symbol: CoreTokenSymbol; amount: string };
 type PrivateActionKind = "deposit" | "transfer" | "withdraw";
 type ShadowAccount = { address: string; balance: string; deployment: "deployed" | "undeployed" | "unknown" };
 type PreparedPrivateAction = {
@@ -100,20 +102,26 @@ function paymasterForNetwork(network: NetworkName) {
   return { nodeUrl: network === "sepolia" ? AVNU_PAYMASTER_PROXY : AVNU_MAINNET_PAYMASTER };
 }
 
-function avnuSwapReview(quote: Quote, sellAmount: string, accountAddress: string, generation: number): AvnuSwapReview {
+function avnuSwapReview(quote: Quote, input: AvnuSwapInput, sellToken: CoreToken, buyToken: CoreToken, accountAddress: string, generation: number): AvnuSwapReview {
   const buyAmountRaw = BigInt(quote.buyAmount);
   const minimumBuyAmountRaw = buyAmountRaw * BigInt(9_950) / BigInt(10_000);
   return {
     accountAddress,
-    buyAmount: formatTokenAmount(buyAmountRaw, 6, 6),
+    buyAmount: formatTokenAmount(buyAmountRaw, buyToken.decimals, 6),
     buyAmountRaw: buyAmountRaw.toString(),
-    minimumBuyAmount: formatTokenAmount(minimumBuyAmountRaw, 6, 6),
+    buyDecimals: buyToken.decimals,
+    buySymbol: buyToken.symbol,
+    buyTokenAddress: buyToken.address,
+    minimumBuyAmount: formatTokenAmount(minimumBuyAmountRaw, buyToken.decimals, 6),
     minimumBuyAmountRaw: minimumBuyAmountRaw.toString(),
     network: "mainnet",
     priceImpact: `${(quote.priceImpact / 100).toFixed(2)}%`,
-    reviewId: `${generation}:${Date.now()}:AVNU`,
+    reviewId: `${generation}:${Date.now()}:${sellToken.symbol}:${buyToken.symbol}:AVNU`,
     route: [...new Set(quote.routes.map((route) => route.name))].join(" + ") || "AVNU",
-    sellAmount,
+    sellAmount: input.sellAmount,
+    sellDecimals: sellToken.decimals,
+    sellSymbol: sellToken.symbol,
+    sellTokenAddress: sellToken.address,
   };
 }
 
@@ -124,6 +132,9 @@ async function nativeSession(account: WalletAccountV6, provider: RpcProvider, wa
   if (!network) throw new Error("UNSUPPORTED STARKNET NETWORK.");
   const chainId = ChainId.fromFelt252(feltChainId);
   const tokens = getPresets(chainId);
+  if (network === "mainnet") {
+    for (const token of CORE_TOKEN_REGISTRY) assertStarkzapPreset(token, tokens[token.presetKey]);
+  }
   async function readAsset(symbol: MainnetAssetSnapshot["symbol"], token: typeof tokens.STRK, decimals: number): Promise<MainnetAssetSnapshot> {
     try {
       const result = await provider.callContract({ contractAddress: token.address, entrypoint: "balance_of", calldata: [account.address] });
@@ -136,6 +147,8 @@ async function nativeSession(account: WalletAccountV6, provider: RpcProvider, wa
   const assets = await Promise.all([
     readAsset("STRK", tokens.STRK, 18),
     readAsset("USDC", tokens.USDC, 6),
+    readAsset("ETH", tokens.ETH, 18),
+    readAsset("WBTC", tokens.WBTC, 8),
   ]);
   const balance = assets.find((asset) => asset.symbol === "STRK")?.amount ?? "— STRK";
   return {
@@ -201,12 +214,12 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     setPrivacyBusy(true);
     setPrivacyStatus("READING PRIVATE STATE FROM WALLET…");
     try {
-      const balances = await account.strk20Balances([nextSession.strkAddress, nextSession.usdcAddress]);
+      const balances = await account.strk20Balances(nextSession.assets.map((asset) => asset.address));
       const byToken = new Map(balances.map((entry) => [tokenKey(entry.token), entry.balance]));
-      const nextBalances: PrivateBalance[] = [
-        { symbol: "STRK", amount: formatTokenAmount(byToken.get(tokenKey(nextSession.strkAddress)) ?? "0x0", 18) },
-        { symbol: "USDC", amount: formatTokenAmount(byToken.get(tokenKey(nextSession.usdcAddress)) ?? "0x0", 6) },
-      ];
+      const nextBalances: PrivateBalance[] = nextSession.assets.map((asset) => ({
+        symbol: asset.symbol,
+        amount: formatTokenAmount(byToken.get(tokenKey(asset.address)) ?? "0x0", asset.decimals),
+      }));
       let nextShadow: ShadowAccount | null = null;
       try {
         const { hash } = await import("starknet");
@@ -492,7 +505,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     return () => onTransferCommandsChange?.(null);
   }, [onTransferCommandsChange, previewPublicTransfer, submitPublicTransfer]);
 
-  const quoteAvnuSwap = useCallback(async (sellAmount: string): Promise<AvnuSwapReview> => {
+  const quoteAvnuSwap = useCallback(async (input: AvnuSwapInput): Promise<AvnuSwapReview> => {
     const account = accountRef.current;
     const currentSession = session;
     if (!account || !currentSession) throw new Error("CONNECT A MAINNET WALLET.");
@@ -503,14 +516,17 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       import("starkzap"),
     ]);
     const tokens = getPresets(ChainId.MAINNET);
-    const sellAmountRaw = Amount.parse(sellAmount, tokens.STRK).toBase();
+    const [sellToken, buyToken] = validateSwapPair(input.sellSymbol, input.buySymbol);
+    const sellPreset = assertStarkzapPreset(sellToken, tokens[sellToken.presetKey]);
+    assertStarkzapPreset(buyToken, tokens[buyToken.presetKey]);
+    const sellAmountRaw = Amount.parse(input.sellAmount, sellPreset).toBase();
     if (sellAmountRaw <= BigInt(0)) throw new Error("ENTER AN AMOUNT.");
-    const strk = currentSession.assets.find((asset) => asset.symbol === "STRK");
-    if (!strk?.raw) throw new Error("STRK BALANCE UNAVAILABLE.");
-    if (sellAmountRaw > BigInt(strk.raw)) throw new Error("AMOUNT EXCEEDS STRK BALANCE.");
+    const sellAsset = currentSession.assets.find((asset) => asset.symbol === sellToken.symbol);
+    if (!sellAsset?.raw) throw new Error(`${sellToken.symbol} BALANCE UNAVAILABLE.`);
+    if (sellAmountRaw > BigInt(sellAsset.raw)) throw new Error(`AMOUNT EXCEEDS ${sellToken.symbol} BALANCE.`);
     const quotes = await getQuotes({
-      sellTokenAddress: tokens.STRK.address,
-      buyTokenAddress: tokens.USDC.address,
+      sellTokenAddress: sellToken.address,
+      buyTokenAddress: buyToken.address,
       sellAmount: sellAmountRaw,
       takerAddress: currentSession.address,
       size: 1,
@@ -522,7 +538,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       || accountRef.current !== account
       || tokenKey(currentSession.address) !== tokenKey(session?.address ?? "")
     ) throw new Error("WALLET CHANGED. QUOTE AGAIN.");
-    const review = avnuSwapReview(quote, sellAmount, currentSession.address, generation);
+    const review = avnuSwapReview(quote, input, sellToken, buyToken, currentSession.address, generation);
     preparedAvnuSwapRef.current = { account, accountAddress: currentSession.address, generation, review, sellAmountRaw };
     return review;
   }, [session]);
@@ -544,9 +560,12 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       import("starkzap"),
     ]);
     const tokens = getPresets(ChainId.MAINNET);
+    const [sellToken, buyToken] = validateSwapPair(prepared.review.sellSymbol, prepared.review.buySymbol);
+    assertStarkzapPreset(sellToken, tokens[sellToken.presetKey]);
+    assertStarkzapPreset(buyToken, tokens[buyToken.presetKey]);
     const quotes = await getQuotes({
-      sellTokenAddress: tokens.STRK.address,
-      buyTokenAddress: tokens.USDC.address,
+      sellTokenAddress: sellToken.address,
+      buyTokenAddress: buyToken.address,
       sellAmount: prepared.sellAmountRaw,
       takerAddress: prepared.accountAddress,
       size: 1,
@@ -559,7 +578,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       ? Number((freshBuyAmount - consentFloor) * BigInt(10_000) / freshBuyAmount)
       : 0;
     if (availableSlippageBps < 1) {
-      const review = avnuSwapReview(freshQuote, prepared.review.sellAmount, prepared.accountAddress, prepared.generation);
+      const review = avnuSwapReview(freshQuote, {
+        sellAmount: prepared.review.sellAmount,
+        sellSymbol: prepared.review.sellSymbol,
+        buySymbol: prepared.review.buySymbol,
+      }, sellToken, buyToken, prepared.accountAddress, prepared.generation);
       preparedAvnuSwapRef.current = { ...prepared, review };
       return { status: "repriced" as const, review };
     }
@@ -576,8 +599,8 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       takerAddress: prepared.accountAddress,
       slippage: executionSlippage,
       expectedChainId: ChainId.MAINNET.toFelt252(),
-      expectedSellTokenAddress: tokens.STRK.address,
-      expectedBuyTokenAddress: tokens.USDC.address,
+      expectedSellTokenAddress: sellToken.address,
+      expectedBuyTokenAddress: buyToken.address,
       expectedSellAmount: prepared.sellAmountRaw,
       expectedMinimumOutput: consentFloor,
     });
@@ -753,7 +776,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
             <button className={privateKind === "transfer" ? "active" : ""} onClick={() => { setPrivateKind("transfer"); resetPrivatePreview(); }}>SEND</button>
             <button className={privateKind === "withdraw" ? "active" : ""} onClick={() => { setPrivateKind("withdraw"); resetPrivatePreview(); }}>UNSHIELD</button>
           </div>
-          <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}><option value="STRK">STRK</option><option value="USDC">USDC</option></select></label>
+          <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}>{CORE_TOKEN_REGISTRY.map((token) => <option value={token.symbol} key={token.symbol}>{token.symbol}</option>)}</select></label>
           <label><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /><small>PUBLIC / {session.assets.find((asset) => asset.symbol === privateSymbol)?.amount ?? "—"} {privateSymbol} · PRIVATE / {privateBalances.find((balance) => balance.symbol === privateSymbol)?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small></label>
           {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
           {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy || !privacySupported}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy || !privacySupported}>CONFIRM IN WALLET ↗</button>}

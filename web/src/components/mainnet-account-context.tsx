@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { CoreTokenSymbol } from "../lib/token-registry.mjs";
 
 export type MainnetAssetSnapshot = {
   address: string;
   amount: string | null;
   decimals: number;
   raw: string | null;
-  symbol: "STRK" | "USDC";
+  symbol: CoreTokenSymbol;
 };
 
 export type MainnetSessionSnapshot = {
@@ -45,6 +46,9 @@ export type AvnuSwapReview = {
   accountAddress: string;
   buyAmount: string;
   buyAmountRaw: string;
+  buyDecimals: number;
+  buySymbol: CoreTokenSymbol;
+  buyTokenAddress: string;
   minimumBuyAmount: string;
   minimumBuyAmountRaw: string;
   network: "mainnet";
@@ -52,6 +56,15 @@ export type AvnuSwapReview = {
   reviewId: string;
   route: string;
   sellAmount: string;
+  sellDecimals: number;
+  sellSymbol: CoreTokenSymbol;
+  sellTokenAddress: string;
+};
+
+export type AvnuSwapInput = {
+  buySymbol: CoreTokenSymbol;
+  sellAmount: string;
+  sellSymbol: CoreTokenSymbol;
 };
 
 export type AvnuSwapSubmitResult =
@@ -59,7 +72,7 @@ export type AvnuSwapSubmitResult =
   | { status: "submitted"; transactionHash: string };
 
 export type AvnuSwapCommands = {
-  quote(sellAmount: string): Promise<AvnuSwapReview>;
+  quote(input: AvnuSwapInput): Promise<AvnuSwapReview>;
   submit(reviewId: string): Promise<AvnuSwapSubmitResult>;
 };
 

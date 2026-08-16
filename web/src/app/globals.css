@@ -766,6 +766,14 @@ main { min-height: 100vh; overflow: clip; }
 .mainnet-transfer-receipt a { width: max-content; border-bottom: 1px solid currentColor; color: var(--ink); text-decoration: none; font-size: 9px; }
 .mainnet-swap-card { margin: 42px 0; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
 .mainnet-swap-form { display: grid; grid-template-columns: minmax(0, 1fr) 210px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.swap-pair-controls { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr); border-bottom: 1px solid var(--ink); }
+.swap-pair-controls label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; padding: 14px 18px; }
+.swap-pair-controls label:first-child { border-right: 1px solid var(--ink); }
+.swap-pair-controls label:last-child { border-left: 1px solid var(--ink); }
+.swap-pair-controls span { font-size: 9px; }
+.swap-pair-controls select { width: 100%; min-height: 44px; border: 0; padding: 0 10px; color: var(--ink); background: transparent; font-size: 18px; font-weight: 700; }
+.swap-pair-controls button { min-height: 58px; border: 0; color: var(--paper); background: var(--ink); cursor: pointer; font-size: 22px; }
+.swap-pair-controls button:disabled { cursor: wait; opacity: .55; }
 .mainnet-swap-input { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px 18px; border-right: 1px solid var(--ink); padding: 22px; }
 .mainnet-swap-input label { min-width: 0; display: grid; gap: 10px; }
 .mainnet-swap-input label span, .mainnet-swap-input small { font-size: 9px; }
@@ -840,6 +848,9 @@ main { min-height: 100vh; overflow: clip; }
   .mainnet-transfer-review > div { grid-template-columns: 1fr; }
   .mainnet-transfer-receipt { padding: 18px 14px; }
   .mainnet-swap-form { grid-template-columns: 1fr; }
+  .swap-pair-controls { grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr); }
+  .swap-pair-controls label { grid-template-columns: 1fr; gap: 5px; padding: 10px; }
+  .swap-pair-controls select { min-height: 38px; padding: 0; font-size: 16px; }
   .mainnet-swap-input { border-right: 0; border-bottom: 1px solid var(--ink); padding: 16px 14px; }
   .mainnet-swap-form > button { min-height: 58px; }
   .mainnet-swap-review { grid-template-columns: 1fr; padding: 18px 14px; }

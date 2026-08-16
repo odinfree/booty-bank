@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { AVNU_MAINNET_CHAIN_ID, AVNU_MAINNET_EXCHANGE, validateAvnuSwapCalls } from "../src/lib/avnu-policy.mjs";
+import { CORE_TOKEN_REGISTRY, getCoreToken, validateSwapPair } from "../src/lib/token-registry.mjs";
 
 const sellToken = "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
-const buyToken = "0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+const buyToken = "0x33068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb";
 const takerAddress = "0x1234";
 const quote = {
   chainId: AVNU_MAINNET_CHAIN_ID,
@@ -80,4 +81,18 @@ test("rejects calldata below the output floor the user reviewed", () => {
     ...policyInput,
     expectedMinimumOutput: BigInt("0x231ae1"),
   }), /MINIMUM OUTPUT/);
+});
+
+test("the swap registry is a pinned allowlist with unique symbols and addresses", () => {
+  assert.deepEqual(CORE_TOKEN_REGISTRY.map((token) => token.symbol), ["STRK", "USDC", "ETH", "WBTC"]);
+  assert.equal(new Set(CORE_TOKEN_REGISTRY.map((token) => token.symbol)).size, CORE_TOKEN_REGISTRY.length);
+  assert.equal(new Set(CORE_TOKEN_REGISTRY.map((token) => BigInt(token.address).toString(16))).size, CORE_TOKEN_REGISTRY.length);
+  assert.equal(getCoreToken("WBTC").decimals, 8);
+});
+
+test("the registry enables buying and selling while rejecting same-token pairs", () => {
+  assert.deepEqual(validateSwapPair("STRK", "USDC").map((token) => token.symbol), ["STRK", "USDC"]);
+  assert.deepEqual(validateSwapPair("USDC", "STRK").map((token) => token.symbol), ["USDC", "STRK"]);
+  assert.throws(() => validateSwapPair("ETH", "ETH"), /DIFFERENT TOKENS/);
+  assert.throws(() => validateSwapPair("DOG", "USDC"), /SUPPORTED TOKEN/);
 });
