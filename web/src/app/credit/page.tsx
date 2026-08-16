@@ -39,7 +39,7 @@ export default function CreditPage() {
 
   return (
     <main className="dossier-route dossier-green"><SiteHeader />
-      <section className="dossier-page-head"><span>FILE / 02</span><span>PRIVATE CREDIT</span><a href="/">CLOSE FILE ×</a><h1>CREDIT<br />WITHOUT<br />EXPOSURE.</h1><p>EXACT PAYOUTS STAY OFFCHAIN.</p></section>
+      <section className="dossier-page-head"><span>02 / CREDIT</span><span>PRIVATE CREDIT</span><a href="/">BACK HOME ×</a><h1>CREDIT<br />WITHOUT<br />EXPOSURE.</h1><p>EXACT PAYOUTS STAY OFFCHAIN.</p></section>
       <section className="credit-workbench">
         <div className="credit-inputs"><div className="workbench-label"><span>01 / INCOME INPUT</span><b>SAMPLE DATA</b></div>
           <div className="input-grid">

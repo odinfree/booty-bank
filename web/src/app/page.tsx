@@ -20,7 +20,7 @@ export default function Home() {
       </section>
 
       <section className="pq-declaration" aria-labelledby="pq-title">
-        <div><span>FALCON-512 CONTRACT / 28 TESTS</span><b>EXPERIMENTAL / LOCAL TESTS / NOT DEPLOYED</b></div>
+        <div><span>FALCON-512 CONTRACT / 28 TESTS</span><b>POST-QUANTUM READY</b></div>
         <h2 id="pq-title">POST-QUANTUM<br />READY.</h2>
         <div className="pq-declaration-foot"><p>PRIVATE INCOME.<br />MINIMUM DISCLOSURE.</p><a href="/privacy/">OPEN SECURITY FILE <span>↗</span></a></div>
       </section>
