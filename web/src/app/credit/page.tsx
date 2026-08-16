@@ -39,7 +39,15 @@ export default function CreditPage() {
 
   return (
     <main className="dossier-route dossier-green"><SiteHeader />
-      <section className="dossier-page-head"><span>02 / CREDIT</span><span>PRIVATE CREDIT</span><a href="/">BACK HOME ×</a><h1>CREDIT<br />WITHOUT<br />EXPOSURE.</h1><p>EXACT PAYOUTS STAY OFFCHAIN.</p></section>
+      <section className="dossier-page-head"><span>02 / CREDIT</span><span>PRIVATE CREDIT</span><a href="/">BACK HOME ×</a><h1>CREDIT<br />WITHOUT<br />EXPOSURE.</h1><p>EXACT PAYOUTS STAY PRIVATE.</p></section>
+      <ol className="case-rows case-rows-page">
+        <li aria-label="Invisible income, solved: verified payout months count.">
+          <div className="case-row-static" aria-hidden="true"><i>01</i><span><s>INVISIBLE INCOME.</s> <b>PAYOUT MONTHS COUNT.</b></span></div>
+        </li>
+        <li aria-label="Full exposure, solved: the lender sees score and band only.">
+          <div className="case-row-static" aria-hidden="true"><i>02</i><span><s>FULL EXPOSURE.</s> <b>SCORE + BAND ONLY.</b></span></div>
+        </li>
+      </ol>
       <section className="credit-workbench">
         <div className="credit-inputs"><div className="workbench-label"><span>01 / INCOME INPUT</span><b>SAMPLE DATA</b></div>
           <div className="input-grid">
@@ -52,7 +60,7 @@ export default function CreditPage() {
           <label className="consent-row"><input type="checkbox" checked={consent} onChange={(event) => { setConsent(event.target.checked); setReady(false); }} /><span>I AUTHORIZE THIS SAMPLE INCOME REVIEW.</span></label>
           <button className="build-button" disabled={!consent || Boolean(inputError)} onClick={() => setReady(true)}>{ready ? "PACKET CREATED" : "CREATE PRIVATE PACKET"}<span>↗</span></button>
         </div>
-        <div className={`credit-result ${ready ? "ready" : ""}`}><div className="workbench-label"><span>02 / LENDER OUTPUT</span><b>{ready ? "READY" : "LOCKED"}</b></div><div className="score-line"><strong>{ready ? packet.lenderPacket.evidenceScore : "--"}</strong><span>/ 100<br />DATA SCORE</span></div><dl><div><dt>REVIEW BAND</dt><dd>{ready ? packet.lenderPacket.reviewBand : "PACKET REQUIRED"}</dd></div><div><dt>SAMPLE LIMIT</dt><dd>{ready ? `$${packet.lenderPacket.illustrativeLimit.toLocaleString("en-US")}` : "--"}</dd></div><div><dt>PUBLIC IDENTITY</dt><dd>NONE</dd></div><div><dt>EXACT PAYOUTS</dt><dd>OFFCHAIN</dd></div></dl><p>{packet.lenderPacket.disclaimer}</p></div>
+        <div className={`credit-result ${ready ? "ready" : ""}`}><div className="workbench-label"><span>02 / LENDER OUTPUT</span><b>{ready ? "READY" : "LOCKED"}</b></div><div className="score-line"><strong>{ready ? packet.lenderPacket.evidenceScore : "--"}</strong><span>/ 100<br />DATA SCORE</span></div><dl><div><dt>REVIEW BAND</dt><dd>{ready ? packet.lenderPacket.reviewBand : "PACKET REQUIRED"}</dd></div><div><dt>SAMPLE LIMIT</dt><dd>{ready ? `$${packet.lenderPacket.illustrativeLimit.toLocaleString("en-US")}` : "--"}</dd></div><div><dt>PUBLIC IDENTITY</dt><dd>NONE</dd></div><div><dt>EXACT PAYOUTS</dt><dd>PRIVATE</dd></div></dl><p>{packet.lenderPacket.disclaimer}</p></div>
       </section>
     </main>
   );

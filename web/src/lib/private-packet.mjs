@@ -11,7 +11,7 @@ export const PRIVACY_FEATURES = Object.freeze([
   { name: "MINIMAL INCOME CREDENTIAL", status: "BUILT", layer: "CREDENTIAL" },
   { name: "EXPIRY + REVOCATION", status: "BUILT", layer: "CREDENTIAL" },
   { name: "FALCON-512 CONTRACT", status: "LOCAL TESTS", layer: "ACCOUNT" },
-  { name: "EXACT EARNINGS OFFCHAIN", status: "BUILT", layer: "DATA" },
+  { name: "EXACT EARNINGS STAY PRIVATE", status: "BUILT", layer: "DATA" },
   { name: "SELECTIVE LENDER PACKET", status: "DEMO", layer: "CREDIT" },
   { name: "SOURCE-ROUTED REPAYMENT", status: "PARTNER", layer: "CREDIT" },
   { name: "STRK20 WALLET RAIL", status: "BUILT", layer: "MONEY" },
@@ -96,7 +96,7 @@ export function buildPrivateIncomePacket(input = SAMPLE_INPUT) {
       volatility: normalized.volatility,
       chargebackRate: normalized.chargebackRate,
       legalIdentity: "HELD BY REGULATED PROVIDER",
-      creatorHandle: "HELD OFFCHAIN",
+      creatorHandle: "NOT SHARED",
     },
     publicCredential: {
       creatorNullifier: "0x071c...b92e",

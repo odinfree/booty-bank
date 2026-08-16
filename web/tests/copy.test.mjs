@@ -173,6 +173,14 @@ test("the landing stays lean and detail lives on the details route", async () =>
   }
 });
 
+test("the credit page leads with its value pairs", async () => {
+  const credit = await source("../src/app/credit/page.tsx");
+
+  assert.match(credit, /<s>INVISIBLE INCOME\.<\/s> <b>PAYOUT MONTHS COUNT\.<\/b>/);
+  assert.match(credit, /<s>FULL EXPOSURE\.<\/s> <b>SCORE \+ BAND ONLY\.<\/b>/);
+  assert.match(credit, /EXACT PAYOUTS STAY PRIVATE\./);
+});
+
 test("the borrow flow shows source-routed repayment", async () => {
   const [app, packet] = await Promise.all([
     source("../src/components/bank-app.tsx"),
@@ -205,4 +213,6 @@ test("visible product copy avoids the rejected long slogans", async () => {
     assert.equal(copy.includes(rejected), false, `Rejected copy returned: ${rejected}`);
   }
   assert.equal(copy.includes("—"), false, "Visible copy contains an em dash");
+  assert.equal(copy.includes("OFFCHAIN"), false, "Visible copy sells the architecture instead of the benefit");
+  assert.doesNotMatch(await source("../src/lib/private-packet.mjs"), /OFFCHAIN/);
 });

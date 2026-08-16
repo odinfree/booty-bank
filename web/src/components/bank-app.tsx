@@ -194,7 +194,7 @@ export default function BankApp() {
           {view === "privacy" && (
             <div className="app-page privacy-page">
               <div className="page-lead"><div><span>PRIVACY CONTROLS</span><h4>CONTROL ACCESS.</h4></div><div className="privacy-score"><small>ILLUSTRATIVE SCORE</small><b>82</b><span>/ 100</span></div></div>
-              <div className="privacy-control-grid"><article><span>PQ-READY ACCOUNT</span><h5>FALCON-512</h5><p>POST-QUANTUM ACCOUNT SIGNATURES.</p><b>LOCAL TESTS</b></article><article><span>INCOME DISCLOSURE</span><h5>MINIMUM PACKET</h5><p>SCORE + BAND ONLY. PAYOUTS STAY OFFCHAIN.</p><b>DEMO LIVE</b></article><article><span>MONEY MOVEMENT</span><h5>SHIELDED PAYOUTS</h5><p>PRIVATE PAYOUTS ON STRK20.</p><b>NEXT BUILD</b></article></div>
+              <div className="privacy-control-grid"><article><span>PQ-READY ACCOUNT</span><h5>FALCON-512</h5><p>POST-QUANTUM ACCOUNT SIGNATURES.</p><b>LOCAL TESTS</b></article><article><span>INCOME DISCLOSURE</span><h5>MINIMUM PACKET</h5><p>SCORE + BAND ONLY. EXACT PAYOUTS STAY PRIVATE.</p><b>DEMO LIVE</b></article><article><span>MONEY MOVEMENT</span><h5>SHIELDED PAYOUTS</h5><p>PRIVATE PAYOUTS ON STRK20.</p><b>NEXT BUILD</b></article></div>
               <article className="access-log"><div className="app-card-head"><h4>DATA ACCESS LOG</h4><button onClick={() => setCompleted("ACCESS REPORT EXPORTED")}>EXPORT</button></div><div><span>TODAY / 10:14</span><b>YOU</b><p>REVEALED EXACT PAYOUT RANGE</p><strong>SELF</strong></div><div><span>AUG 12 / 16:08</span><b>SAMPLE LENDER</b><p>EVIDENCE SCORE + REVIEW BAND</p><strong>EXPIRED</strong></div><div><span>AUG 01 / 09:20</span><b>VERIFIER</b><p>COMMITMENT + NULLIFIER</p><strong>ACTIVE</strong></div></article>
             </div>
           )}

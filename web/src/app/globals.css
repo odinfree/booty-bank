@@ -656,9 +656,9 @@ main { min-height: 100vh; overflow: clip; }
 /* Case file rows (USP section) */
 .case-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
 .case-rows li { border-bottom: 1px solid var(--ink); }
-.case-rows a { display: flex; align-items: baseline; gap: 20px; padding: 20px 0; text-decoration: none; }
+.case-rows a, .case-rows .case-row-static { display: flex; align-items: baseline; gap: 20px; padding: 20px 0; text-decoration: none; }
 .case-rows i { font-style: normal; font-size: 10px; font-weight: 700; min-width: 30px; }
-.case-rows a > span { font-size: clamp(26px, 4.6vw, 64px); font-weight: 700; letter-spacing: -.035em; line-height: .95; }
+.case-rows a > span, .case-rows .case-row-static > span { font-size: clamp(26px, 4.6vw, 64px); font-weight: 700; letter-spacing: -.035em; line-height: .95; }
 .case-rows s { text-decoration-thickness: .09em; opacity: .45; }
 .case-rows a:hover b, .case-rows a:focus-visible b { background: var(--ink); color: var(--accent); }
 
@@ -673,10 +673,13 @@ main { min-height: 100vh; overflow: clip; }
 .case-link { display: inline-block; margin-top: 16px; padding-bottom: 2px; border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .05em; text-decoration: none; }
 .case-link:hover { background: var(--ink); color: var(--paper); }
 #durability { scroll-margin-top: 100px; }
+.case-rows-page { padding: 4px 24px 30px; border-top: 0; }
+.case-rows-page .case-row-static > span { font-size: clamp(22px, 3.4vw, 44px); }
+.dossier-green .case-rows s { opacity: .7; }
 
 @media (max-width: 800px) {
-  .case-rows a { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 0; }
-  .case-rows a > span { display: flex; flex-direction: column; gap: 2px; font-size: clamp(30px, 9vw, 44px); }
+  .case-rows a, .case-rows .case-row-static { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 0; }
+  .case-rows a > span, .case-rows .case-row-static > span { display: flex; flex-direction: column; gap: 2px; font-size: clamp(30px, 9vw, 44px); }
   .case-details { padding: 48px 12px 64px; }
   .case-details-head { flex-direction: column; gap: 8px; }
   .case-details dl { grid-template-columns: 1fr; gap: 28px; }
