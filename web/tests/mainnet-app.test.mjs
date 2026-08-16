@@ -63,6 +63,7 @@ test("public send binds a reviewed transfer to the exact wallet session", async 
   assert.match(wallet, /estimateInvokeFee/);
   assert.match(wallet, /prepared\.generation !== sessionGenerationRef\.current/);
   assert.match(wallet, /prepared\.account\.execute\(prepared\.call\)/);
+  assert.match(wallet, /TRANSFER SUBMITTED FROM THE PREVIOUS WALLET/);
   assert.match(send, /REVIEW TRANSFER/);
   assert.match(send, /CONFIRM IN WALLET/);
   assert.match(send, /A TRANSACTION HASH IS NOT FINAL SETTLEMENT/);
@@ -80,6 +81,8 @@ test("AVNU swap binds execution to the output floor the user reviewed", async ()
   assert.match(context, /AvnuSwapReview/);
   assert.match(wallet, /expectedMinimumOutput: consentFloor/);
   assert.match(wallet, /status: "repriced"/);
+  assert.match(wallet, /STRK REQUIRED FOR GAS/);
+  assert.match(wallet, /SWAP SUBMITTED FROM THE PREVIOUS WALLET/);
   assert.match(policy, /expectedMinimumOutput/);
   assert.match(swap, /MINIMUM RECEIVED/);
   assert.match(swap, /sellSymbol/);
@@ -129,6 +132,8 @@ test("STRK20 controls shield, transfer, and unshield selectable tokens through a
   assert.match(wallet, /compareVersions/);
   assert.match(wallet, /privateSymbol/);
   assert.match(wallet, /CORE_TOKEN_REGISTRY\.map/);
+  assert.match(wallet, /clearPrivateSessionState/);
+  assert.match(wallet, /prepared\.account !== accountRef\.current/);
   assert.match(wallet, /strk20PrepareInvoke/);
   assert.match(wallet, /strk20InvokeTransaction/);
   assert.match(wallet, /TWO WALLET STEPS/);

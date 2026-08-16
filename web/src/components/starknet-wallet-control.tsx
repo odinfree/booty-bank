@@ -208,6 +208,18 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     preparedAvnuSwapRef.current = null;
   }, []);
 
+  const clearPrivateSessionState = useCallback(() => {
+    privateOperationRef.current = false;
+    preparedPrivateActionRef.current = null;
+    setPrivateBalances([]);
+    setShadow(null);
+    setPrivacyBusy(false);
+    setPrivatePreviewed(false);
+    setPrivateTxHash("");
+    setPrivacySupported(false);
+    setPrivacyStatus("CONNECT A STRK20 WALLET.");
+  }, []);
+
   const refreshPrivacy = useCallback(async (account: WalletAccountV6, provider: RpcProvider, nextSession: NativeSession, generation: number) => {
     const isCurrent = () => generation === sessionGenerationRef.current && accountRef.current === account;
     if (!isCurrent()) return;
@@ -265,7 +277,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
 
   const attachWallet = useCallback(async (wallet: WalletWithStarknetFeatures, silent = false, expectedAddress?: string) => {
     const generation = ++sessionGenerationRef.current;
-    resetPrivatePreview();
+    clearPrivateSessionState();
     resetPublicTransfer();
     resetAvnuSwap();
     const { compareVersions, RpcProvider, walletV6, WalletAccountV6 } = await import("starknet");
@@ -329,7 +341,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     window.localStorage.setItem(WALLET_SESSION_KEY, JSON.stringify({ walletId: walletId(wallet), address: nextSession.address }));
     walletEventCleanupRef.current = account.onChange(() => {
       sessionGenerationRef.current += 1;
-      resetPrivatePreview();
+      clearPrivateSessionState();
       resetPublicTransfer();
       resetAvnuSwap();
       setSession(null);
@@ -337,7 +349,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       onSessionChange?.(null);
       void attachWallet(wallet, true).catch(() => setStatus("ACCOUNT REFRESH FAILED."));
     });
-  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetAvnuSwap, resetPrivatePreview, resetPublicTransfer]);
+  }, [clearPrivateSessionState, onSessionChange, refreshPrivacy, requiredNetwork, resetAvnuSwap, resetPublicTransfer]);
 
   useEffect(() => {
     let active = true;
@@ -423,7 +435,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     const wallet = walletRef.current;
     const account = accountRef.current;
     sessionGenerationRef.current += 1;
-    resetPrivatePreview();
+    clearPrivateSessionState();
     resetPublicTransfer();
     resetAvnuSwap();
     walletEventCleanupRef.current?.();
@@ -438,10 +450,6 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       setSession(null);
       onSessionChange?.(null);
       setPanelOpen(false);
-      setPrivateBalances([]);
-      setPrivacySupported(false);
-      setShadow(null);
-      setPrivacyBusy(false);
       window.localStorage.removeItem(WALLET_SESSION_KEY);
     }
   }
@@ -497,6 +505,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     }
     resetPublicTransfer();
     const result = await prepared.account.execute(prepared.call);
+    if (
+      prepared.generation !== sessionGenerationRef.current
+      || accountRef.current !== prepared.account
+      || tokenKey(session.address) !== tokenKey(prepared.accountAddress)
+    ) throw new Error("TRANSFER SUBMITTED FROM THE PREVIOUS WALLET. CHECK THAT WALLET ON STARKSCAN.");
     return { transactionHash: result.transaction_hash };
   }, [resetPublicTransfer, session]);
 
@@ -524,6 +537,8 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     const sellAsset = currentSession.assets.find((asset) => asset.symbol === sellToken.symbol);
     if (!sellAsset?.raw) throw new Error(`${sellToken.symbol} BALANCE UNAVAILABLE.`);
     if (sellAmountRaw > BigInt(sellAsset.raw)) throw new Error(`AMOUNT EXCEEDS ${sellToken.symbol} BALANCE.`);
+    const gasAsset = currentSession.assets.find((asset) => asset.symbol === "STRK");
+    if (!gasAsset?.raw || BigInt(gasAsset.raw) === BigInt(0)) throw new Error("STRK REQUIRED FOR GAS.");
     const quotes = await getQuotes({
       sellTokenAddress: sellToken.address,
       buyTokenAddress: buyToken.address,
@@ -613,11 +628,18 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       resetAvnuSwap();
       throw new Error("WALLET CHANGED. QUOTE AGAIN.");
     }
+    const gasAsset = session.assets.find((asset) => asset.symbol === "STRK");
+    if (!gasAsset?.raw || BigInt(gasAsset.raw) === BigInt(0)) throw new Error("STRK REQUIRED FOR GAS.");
     resetAvnuSwap();
     const result = await prepared.account.executePaymasterTransaction(calls, {
       feeMode: { mode: "default", gasToken: session.strkAddress },
       timeBounds: { executeBefore: Math.floor(Date.now() / 1000) + 300 },
     });
+    if (
+      prepared.generation !== sessionGenerationRef.current
+      || accountRef.current !== prepared.account
+      || tokenKey(session.address) !== tokenKey(prepared.accountAddress)
+    ) throw new Error("SWAP SUBMITTED FROM THE PREVIOUS WALLET. CHECK THAT WALLET ON STARKSCAN.");
     return { status: "submitted" as const, transactionHash: result.transaction_hash };
   }, [resetAvnuSwap, session]);
 
@@ -668,11 +690,14 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       setPrivatePreviewed(true);
       setPrivacyStatus("PREVIEW PASSED. WALLET APPROVAL IS NEXT.");
     } catch (error) {
+      if (generation !== sessionGenerationRef.current || accountRef.current !== account) return;
       setPrivatePreviewed(false);
       setPrivacyStatus(errorLabel(error, "PRIVATE PREVIEW FAILED."));
     } finally {
-      privateOperationRef.current = false;
-      setPrivacyBusy(false);
+      if (generation === sessionGenerationRef.current && accountRef.current === account) {
+        privateOperationRef.current = false;
+        setPrivacyBusy(false);
+      }
     }
   }
 
@@ -696,16 +721,24 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       : "APPROVE IN WALLET. PROOF GENERATION CAN TAKE TIME…");
     try {
       const result = await prepared.account.strk20InvokeTransaction([prepared.action]);
+      if (
+        prepared.generation !== sessionGenerationRef.current
+        || prepared.account !== accountRef.current
+        || session.chainLiteral !== prepared.chainLiteral
+      ) return;
       setPrivateTxHash(result.transaction_hash);
       preparedPrivateActionRef.current = null;
       setPrivatePreviewed(false);
       setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON.");
       if (providerRef.current) await refreshPrivacy(prepared.account, providerRef.current, session, prepared.generation);
     } catch (error) {
+      if (prepared.generation !== sessionGenerationRef.current || prepared.account !== accountRef.current) return;
       setPrivacyStatus(errorLabel(error, "PRIVATE TRANSACTION FAILED."));
     } finally {
-      privateOperationRef.current = false;
-      setPrivacyBusy(false);
+      if (prepared.generation === sessionGenerationRef.current && prepared.account === accountRef.current) {
+        privateOperationRef.current = false;
+        setPrivacyBusy(false);
+      }
     }
   }
 
