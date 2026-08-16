@@ -26,7 +26,7 @@ The demo supports working interactions for balance redaction, navigation, transf
 
 The same wallet session derives a deterministic Booty Bank shadow account and distinguishes `DEPLOYED` from `FUNDABLE BEFORE DEPLOYMENT`. Shadow-account execution and a payout-specific anonymizer remain gated work; the interface does not claim they are live.
 
-Privy social login is a visible preview, not an active account path. The Worker contains owner-bound Starknet wallet creation behind verified Privy access tokens, but the public interface does not call it and no browser signing endpoint exists. Activation requires a transaction policy that binds chain, account, nonce, calls, expiry, and visible user intent before any signing route opens.
+Privy social login and owner-bound Starknet wallet creation are wired behind deployment configuration. With no public Privy App ID, the interface falls back to the labelled preview. When configured, Google or email login produces a short-lived access token, the Worker verifies it, and the user can explicitly create or recover the same Privy-owned Starknet wallet. No browser signing endpoint exists. Activation details are in [Privy integration](docs/PRIVY-INTEGRATION.md).
 
 The account surface takes its functional benchmark from [Revolut's account, transfer, card, budgeting, and investment categories](https://help.revolut.com/en-CH/help/). Creator cards, fan rewards, community revenue, and drops take their functional benchmark from [Ready](https://www.ready.co/). Booty Bank uses its own product structure and visual system.
 
@@ -89,7 +89,9 @@ Privy wallet-creation activation needs two values that are intentionally absent 
 - Cloudflare Worker secret `PRIVY_APP_ID`
 - Cloudflare Worker secret `PRIVY_APP_SECRET`
 
-Set Worker secrets with `npx wrangler secret put`; never add them to `wrangler.jsonc`. Social login remains a placeholder until the signing policy and a fresh security review close.
+Set Worker secrets with `npx wrangler secret put`; never add them to `wrangler.jsonc`. Social login becomes live when both the web identifier and Worker credentials are configured. Raw signing remains closed until the transaction policy and a fresh security review pass.
+
+The static web build also reads public GitHub Actions repository variables `NEXT_PUBLIC_PRIVY_APP_ID` and the optional `NEXT_PUBLIC_PRIVY_CLIENT_ID`. These are identifiers, not secrets. Until they are set, production keeps the honest preview while the existing wallet and STRK20 paths continue working.
 
 ## Launch gates
 
