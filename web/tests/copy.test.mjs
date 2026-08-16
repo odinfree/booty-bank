@@ -74,10 +74,11 @@ test("the panel-selected deposit-slot mark ships in the favicon and product chro
 });
 
 test("Privy social login is live only when configured and otherwise stays an honest preview", async () => {
-  const [control, placeholder, providers] = await Promise.all([
+  const [control, placeholder, providers, swap] = await Promise.all([
     source("../src/components/starknet-wallet-control.tsx"),
     source("../src/components/privy-placeholder.tsx"),
     source("../src/components/app-providers.tsx"),
+    source("../src/app/app/swap/page.tsx"),
   ]);
 
   assert.match(control, /<PrivyPlaceholder \/>/);
@@ -94,7 +95,7 @@ test("Privy social login is live only when configured and otherwise stays an hon
   assert.doesNotMatch(control, /executeSwap/);
   assert.match(control, /executePaymasterTransaction/);
   assert.match(control, /validateAvnuSwapCalls/);
-  assert.match(control, /SWAP WITH AVNU PAYMASTER/);
+  assert.match(swap, /SWAP WITH AVNU/);
 });
 
 test("the account opens in standard mode and private mode is opt-in", async () => {

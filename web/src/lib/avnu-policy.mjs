@@ -17,7 +17,7 @@ function sameFelt(left, right) {
   return felt(left) === felt(right);
 }
 
-export function validateAvnuSwapCalls({ built, quote, takerAddress, slippage, expectedChainId, expectedSellTokenAddress, expectedBuyTokenAddress, expectedSellAmount }) {
+export function validateAvnuSwapCalls({ built, quote, takerAddress, slippage, expectedChainId, expectedSellTokenAddress, expectedBuyTokenAddress, expectedSellAmount, expectedMinimumOutput = 0n }) {
   if (!Number.isFinite(slippage) || slippage <= 0 || slippage > 0.03) {
     throw new Error("SLIPPAGE POLICY REJECTED.");
   }
@@ -65,7 +65,7 @@ export function validateAvnuSwapCalls({ built, quote, takerAddress, slippage, ex
     throw new Error("AVNU SWAP POLICY REJECTED.");
   }
   const minimumOutput = BigInt(quote.buyAmount) * BigInt(Math.floor((1 - slippage) * 10_000)) / 10_000n;
-  if (uint256(swapCalldata, 6) < minimumOutput) {
+  if (uint256(swapCalldata, 6) < minimumOutput || uint256(swapCalldata, 6) < BigInt(expectedMinimumOutput)) {
     throw new Error("AVNU MINIMUM OUTPUT REJECTED.");
   }
   if (

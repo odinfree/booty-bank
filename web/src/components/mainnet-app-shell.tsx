@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { MainnetAccountContext, type MainnetSessionSnapshot, type PublicTransferCommands } from "./mainnet-account-context";
+import { MainnetAccountContext, type AvnuSwapCommands, type MainnetSessionSnapshot, type PublicTransferCommands } from "./mainnet-account-context";
 import StarknetWalletControl from "./starknet-wallet-control";
 
 const primary = [
@@ -28,10 +28,11 @@ function routeActive(pathname: string, item: { href: string; routes?: string[] }
 export default function MainnetAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [session, setSession] = useState<MainnetSessionSnapshot | null>(null);
+  const [swapCommands, setSwapCommands] = useState<AvnuSwapCommands | null>(null);
   const [transferCommands, setTransferCommands] = useState<PublicTransferCommands | null>(null);
 
   return (
-    <MainnetAccountContext.Provider value={{ session, transferCommands }}>
+    <MainnetAccountContext.Provider value={{ session, swapCommands, transferCommands }}>
     <main className="mainnet-app">
       <header className="mainnet-topbar">
         <Link className="mainnet-brand" href="/" aria-label="Booty Bank home">
@@ -39,7 +40,7 @@ export default function MainnetAppShell({ children }: { children: ReactNode }) {
           <span>BOOTY BANK</span>
         </Link>
         <div className="mainnet-network" aria-label="Required network"><span>NETWORK</span><b>STARKNET MAINNET</b></div>
-        <div className="mainnet-wallet"><StarknetWalletControl requiredNetwork="mainnet" onSessionChange={setSession} onTransferCommandsChange={setTransferCommands} /></div>
+        <div className="mainnet-wallet"><StarknetWalletControl requiredNetwork="mainnet" onSessionChange={setSession} onSwapCommandsChange={setSwapCommands} onTransferCommandsChange={setTransferCommands} /></div>
         <Link className="mainnet-exit" href="/">EXIT APP ×</Link>
       </header>
 

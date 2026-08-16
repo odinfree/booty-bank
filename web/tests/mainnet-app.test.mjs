@@ -68,3 +68,20 @@ test("public send binds a reviewed transfer to the exact wallet session", async 
   assert.match(send, /A TRANSACTION HASH IS NOT FINAL SETTLEMENT/);
   assert.doesNotMatch(send, /SENT |setCompleted/);
 });
+
+test("AVNU swap binds execution to the output floor the user reviewed", async () => {
+  const [wallet, context, policy, swap] = await Promise.all([
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/components/mainnet-account-context.tsx"),
+    source("../src/lib/avnu-policy.mjs"),
+    source("../src/app/app/swap/page.tsx"),
+  ]);
+
+  assert.match(context, /AvnuSwapReview/);
+  assert.match(wallet, /expectedMinimumOutput: consentFloor/);
+  assert.match(wallet, /status: "repriced"/);
+  assert.match(policy, /expectedMinimumOutput/);
+  assert.match(swap, /MINIMUM RECEIVED/);
+  assert.match(swap, /NO WALLET REQUEST IS SENT/);
+  assert.doesNotMatch(swap, /CONSENT FIX NEXT/);
+});

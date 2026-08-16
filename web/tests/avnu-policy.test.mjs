@@ -74,3 +74,10 @@ test("rejects a quote substituted away from the user's exact intent", () => {
     assert.throws(() => validateAvnuSwapCalls({ ...policyInput, ...mutation }), /INTENT/);
   }
 });
+
+test("rejects calldata below the output floor the user reviewed", () => {
+  assert.throws(() => validateAvnuSwapCalls({
+    ...policyInput,
+    expectedMinimumOutput: BigInt("0x231ae1"),
+  }), /MINIMUM OUTPUT/);
+});

@@ -12,4 +12,5 @@ export function validateAvnuSwapCalls(input: {
   expectedSellTokenAddress: string;
   expectedBuyTokenAddress: string;
   expectedSellAmount: bigint;
+  expectedMinimumOutput?: bigint;
 }): Call[];

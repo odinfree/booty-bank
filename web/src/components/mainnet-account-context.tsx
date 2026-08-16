@@ -41,10 +41,33 @@ export type PublicTransferCommands = {
   submit(reviewId: string): Promise<{ transactionHash: string }>;
 };
 
+export type AvnuSwapReview = {
+  accountAddress: string;
+  buyAmount: string;
+  buyAmountRaw: string;
+  minimumBuyAmount: string;
+  minimumBuyAmountRaw: string;
+  network: "mainnet";
+  priceImpact: string;
+  reviewId: string;
+  route: string;
+  sellAmount: string;
+};
+
+export type AvnuSwapSubmitResult =
+  | { status: "repriced"; review: AvnuSwapReview }
+  | { status: "submitted"; transactionHash: string };
+
+export type AvnuSwapCommands = {
+  quote(sellAmount: string): Promise<AvnuSwapReview>;
+  submit(reviewId: string): Promise<AvnuSwapSubmitResult>;
+};
+
 export const MainnetAccountContext = createContext<{
+  swapCommands: AvnuSwapCommands | null;
   session: MainnetSessionSnapshot | null;
   transferCommands: PublicTransferCommands | null;
-}>({ session: null, transferCommands: null });
+}>({ session: null, swapCommands: null, transferCommands: null });
 
 export function useMainnetAccount() {
   return useContext(MainnetAccountContext);

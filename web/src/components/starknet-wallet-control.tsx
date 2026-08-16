@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
 import { buildStrk20Action, formatTokenAmount, parseTokenAmount } from "../lib/strk20.mjs";
-import type { MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
+import type { AvnuSwapCommands, AvnuSwapReview, MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
 import PrivyPlaceholder from "./privy-placeholder";
 
 type NetworkName = "mainnet" | "sepolia";
@@ -28,11 +28,17 @@ type PreparedPublicTransfer = {
   generation: number;
   review: PublicTransferReview;
 };
+type PreparedAvnuSwap = {
+  account: WalletAccountV6;
+  accountAddress: string;
+  generation: number;
+  review: AvnuSwapReview;
+  sellAmountRaw: bigint;
+};
 
 const WALLET_SESSION_KEY = "bootybank.wallet-session.v1";
 const AVNU_PAYMASTER_PROXY = process.env.NEXT_PUBLIC_AVNU_PAYMASTER_URL ?? "https://bootybank.app/api/paymaster";
 const AVNU_MAINNET_PAYMASTER = "https://starknet.paymaster.avnu.fi";
-const SWAP_SLIPPAGE = 0.005;
 
 const SHADOW_ANONYMIZER: Record<NetworkName, string> = {
   mainnet: "0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7",
@@ -81,6 +87,23 @@ function paymasterForNetwork(network: NetworkName) {
   return { nodeUrl: network === "sepolia" ? AVNU_PAYMASTER_PROXY : AVNU_MAINNET_PAYMASTER };
 }
 
+function avnuSwapReview(quote: Quote, sellAmount: string, accountAddress: string, generation: number): AvnuSwapReview {
+  const buyAmountRaw = BigInt(quote.buyAmount);
+  const minimumBuyAmountRaw = buyAmountRaw * BigInt(9_950) / BigInt(10_000);
+  return {
+    accountAddress,
+    buyAmount: formatTokenAmount(buyAmountRaw, 6, 6),
+    buyAmountRaw: buyAmountRaw.toString(),
+    minimumBuyAmount: formatTokenAmount(minimumBuyAmountRaw, 6, 6),
+    minimumBuyAmountRaw: minimumBuyAmountRaw.toString(),
+    network: "mainnet",
+    priceImpact: `${(quote.priceImpact / 100).toFixed(2)}%`,
+    reviewId: `${generation}:${Date.now()}:AVNU`,
+    route: [...new Set(quote.routes.map((route) => route.name))].join(" + ") || "AVNU",
+    sellAmount,
+  };
+}
+
 async function nativeSession(account: WalletAccountV6, provider: RpcProvider, walletName: string): Promise<NativeSession> {
   const { Amount, ChainId, getPresets } = await import("starkzap");
   const feltChainId = await provider.getChainId();
@@ -115,7 +138,7 @@ async function nativeSession(account: WalletAccountV6, provider: RpcProvider, wa
   };
 }
 
-function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: NativeSession | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void }) {
+function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommandsChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: NativeSession | null) => void; onSwapCommandsChange?: (commands: AvnuSwapCommands | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void }) {
   const accountRef = useRef<WalletAccountV6 | null>(null);
   const providerRef = useRef<RpcProvider | null>(null);
   const walletRef = useRef<WalletWithStarknetFeatures | null>(null);
@@ -123,6 +146,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
   const privateOperationRef = useRef(false);
   const preparedPrivateActionRef = useRef<PreparedPrivateAction | null>(null);
   const preparedPublicTransferRef = useRef<PreparedPublicTransfer | null>(null);
+  const preparedAvnuSwapRef = useRef<PreparedAvnuSwap | null>(null);
   const sessionGenerationRef = useRef(0);
   const restoreAttemptRef = useRef(false);
   const [wallets, setWallets] = useState<WalletWithStarknetFeatures[]>([]);
@@ -131,12 +155,6 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
   const [status, setStatus] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [panelMode, setPanelMode] = useState<"private" | "swap">("private");
-  const [sellAmount, setSellAmount] = useState("10");
-  const [quote, setQuote] = useState<Quote | null>(null);
-  const [quoteLabel, setQuoteLabel] = useState("");
-  const [swapTxHash, setSwapTxHash] = useState("");
-  const [railBusy, setRailBusy] = useState(false);
   const [privacyBusy, setPrivacyBusy] = useState(false);
   const [privacyStatus, setPrivacyStatus] = useState("CONNECT A STRK20 WALLET.");
   const [privateBalances, setPrivateBalances] = useState<PrivateBalance[]>([]);
@@ -155,6 +173,10 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
 
   const resetPublicTransfer = useCallback(() => {
     preparedPublicTransferRef.current = null;
+  }, []);
+
+  const resetAvnuSwap = useCallback(() => {
+    preparedAvnuSwapRef.current = null;
   }, []);
 
   const refreshPrivacy = useCallback(async (account: WalletAccountV6, provider: RpcProvider, nextSession: NativeSession, generation: number) => {
@@ -216,6 +238,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
     const generation = ++sessionGenerationRef.current;
     resetPrivatePreview();
     resetPublicTransfer();
+    resetAvnuSwap();
     const { RpcProvider, WalletAccountV6 } = await import("starknet");
     const walletChain = wallet.accounts[0]?.chains[0];
     const networkCandidates = [walletChain, ...wallet.chains].map((chain) => networkFromChain(chain)).filter((value): value is NetworkName => value !== null);
@@ -270,20 +293,18 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
     onSessionChange?.(nextSession);
     setChooserOpen(false);
     setStatus("");
-    setQuote(null);
-    setQuoteLabel("");
-    setSwapTxHash("");
     window.localStorage.setItem(WALLET_SESSION_KEY, JSON.stringify({ walletId: walletId(wallet), address: nextSession.address }));
     walletEventCleanupRef.current = account.onChange(() => {
       sessionGenerationRef.current += 1;
       resetPrivatePreview();
       resetPublicTransfer();
+      resetAvnuSwap();
       setSession(null);
       onSessionChange?.(null);
       void attachWallet(wallet, true).catch(() => setStatus("ACCOUNT REFRESH FAILED."));
     });
     void refreshPrivacy(account, provider, nextSession, generation);
-  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetPrivatePreview, resetPublicTransfer]);
+  }, [onSessionChange, refreshPrivacy, requiredNetwork, resetAvnuSwap, resetPrivatePreview, resetPublicTransfer]);
 
   useEffect(() => {
     let active = true;
@@ -352,6 +373,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
     sessionGenerationRef.current += 1;
     resetPrivatePreview();
     resetPublicTransfer();
+    resetAvnuSwap();
     walletEventCleanupRef.current?.();
     walletEventCleanupRef.current = null;
     account?.unsubscribeChange();
@@ -363,45 +385,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
       walletRef.current = null;
       setSession(null);
       onSessionChange?.(null);
-      setQuote(null);
-      setSwapTxHash("");
       setPanelOpen(false);
       setPrivateBalances([]);
       setShadow(null);
       setPrivacyBusy(false);
       window.localStorage.removeItem(WALLET_SESSION_KEY);
-    }
-  }
-
-  async function fetchAvnuQuote() {
-    if (!session || !accountRef.current) return;
-    setQuote(null);
-    setQuoteLabel("QUOTING…");
-    setRailBusy(true);
-    try {
-      const [{ getQuotes, SEPOLIA_BASE_URL }, { Amount, ChainId, getPresets }] = await Promise.all([
-        import("@avnu/avnu-sdk"),
-        import("starkzap"),
-      ]);
-      const chainId = session.network === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
-      const tokens = getPresets(chainId);
-      const amount = Amount.parse(sellAmount, tokens.STRK).toBase();
-      if (amount <= BigInt(0)) throw new Error("ENTER AN AMOUNT.");
-      const options = session.network === "sepolia" ? { baseUrl: SEPOLIA_BASE_URL } : undefined;
-      const quotes = await getQuotes({
-        sellTokenAddress: tokens.STRK.address,
-        buyTokenAddress: tokens.USDC.address,
-        sellAmount: amount,
-        takerAddress: session.address,
-        size: 1,
-      }, options);
-      if (!quotes[0]) throw new Error("NO AVNU ROUTE.");
-      setQuote(quotes[0]);
-      setQuoteLabel(Amount.fromRaw(quotes[0].buyAmount, tokens.USDC).toFormatted(true));
-    } catch (error) {
-      setQuoteLabel(errorLabel(error, "QUOTE FAILED."));
-    } finally {
-      setRailBusy(false);
     }
   }
 
@@ -464,67 +452,116 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
     return () => onTransferCommandsChange?.(null);
   }, [onTransferCommandsChange, previewPublicTransfer, submitPublicTransfer]);
 
-  async function executeAvnuSwap() {
+  const quoteAvnuSwap = useCallback(async (sellAmount: string): Promise<AvnuSwapReview> => {
     const account = accountRef.current;
     const currentSession = session;
-    if (!account || !currentSession || railBusy) return;
+    if (!account || !currentSession) throw new Error("CONNECT A MAINNET WALLET.");
+    if (currentSession.network !== "mainnet") throw new Error("MAINNET SWAP ONLY.");
     const generation = sessionGenerationRef.current;
-    setRailBusy(true);
-    setSwapTxHash("");
-    setQuoteLabel("REFRESHING QUOTE…");
-    try {
-      if (currentSession.network !== "mainnet") throw new Error("MAINNET SWAP ONLY.");
-      const [{ getQuotes, quoteToCalls }, { Amount, ChainId, getPresets }] = await Promise.all([
-        import("@avnu/avnu-sdk"),
-        import("starkzap"),
-      ]);
-      const chainId = ChainId.MAINNET;
-      const tokens = getPresets(chainId);
-      const amount = Amount.parse(sellAmount, tokens.STRK).toBase();
-      const quotes = await getQuotes({
-        sellTokenAddress: tokens.STRK.address,
-        buyTokenAddress: tokens.USDC.address,
-        sellAmount: amount,
-        takerAddress: currentSession.address,
-        size: 1,
-      });
-      const freshQuote = quotes[0];
-      if (!freshQuote) throw new Error("NO FRESH AVNU ROUTE.");
-      const built = await quoteToCalls({
-        quoteId: freshQuote.quoteId,
-        slippage: SWAP_SLIPPAGE,
-        takerAddress: currentSession.address,
-        executeApprove: true,
-      });
-      const calls = validateAvnuSwapCalls({
-        built,
-        quote: freshQuote,
-        takerAddress: currentSession.address,
-        slippage: SWAP_SLIPPAGE,
-        expectedChainId: chainId.toFelt252(),
-        expectedSellTokenAddress: tokens.STRK.address,
-        expectedBuyTokenAddress: tokens.USDC.address,
-        expectedSellAmount: amount,
-      });
-      if (
-        generation !== sessionGenerationRef.current
-        || accountRef.current !== account
-        || tokenKey(currentSession.address) !== tokenKey(session.address)
-      ) throw new Error("WALLET CHANGED. QUOTE AGAIN.");
-      setQuote(freshQuote);
-      setQuoteLabel("APPROVE GAS + SWAP IN WALLET…");
-      const result = await account.executePaymasterTransaction(calls, {
-        feeMode: { mode: "default", gasToken: currentSession.strkAddress },
-        timeBounds: { executeBefore: Math.floor(Date.now() / 1000) + 300 },
-      });
-      setSwapTxHash(result.transaction_hash);
-      setQuoteLabel(Amount.fromRaw(freshQuote.buyAmount, tokens.USDC).toFormatted(true));
-    } catch (error) {
-      setQuoteLabel(errorLabel(error, "AVNU SWAP FAILED."));
-    } finally {
-      setRailBusy(false);
+    const [{ getQuotes }, { Amount, ChainId, getPresets }] = await Promise.all([
+      import("@avnu/avnu-sdk"),
+      import("starkzap"),
+    ]);
+    const tokens = getPresets(ChainId.MAINNET);
+    const sellAmountRaw = Amount.parse(sellAmount, tokens.STRK).toBase();
+    if (sellAmountRaw <= BigInt(0)) throw new Error("ENTER AN AMOUNT.");
+    const strk = currentSession.assets.find((asset) => asset.symbol === "STRK");
+    if (!strk?.raw) throw new Error("STRK BALANCE UNAVAILABLE.");
+    if (sellAmountRaw > BigInt(strk.raw)) throw new Error("AMOUNT EXCEEDS STRK BALANCE.");
+    const quotes = await getQuotes({
+      sellTokenAddress: tokens.STRK.address,
+      buyTokenAddress: tokens.USDC.address,
+      sellAmount: sellAmountRaw,
+      takerAddress: currentSession.address,
+      size: 1,
+    });
+    const quote = quotes[0];
+    if (!quote) throw new Error("NO AVNU ROUTE.");
+    if (
+      generation !== sessionGenerationRef.current
+      || accountRef.current !== account
+      || tokenKey(currentSession.address) !== tokenKey(session?.address ?? "")
+    ) throw new Error("WALLET CHANGED. QUOTE AGAIN.");
+    const review = avnuSwapReview(quote, sellAmount, currentSession.address, generation);
+    preparedAvnuSwapRef.current = { account, accountAddress: currentSession.address, generation, review, sellAmountRaw };
+    return review;
+  }, [session]);
+
+  const submitAvnuSwap = useCallback(async (reviewId: string) => {
+    const prepared = preparedAvnuSwapRef.current;
+    if (!prepared || prepared.review.reviewId !== reviewId) throw new Error("QUOTE EXPIRED. GET A NEW QUOTE.");
+    if (
+      prepared.generation !== sessionGenerationRef.current
+      || accountRef.current !== prepared.account
+      || session?.network !== "mainnet"
+      || tokenKey(session.address) !== tokenKey(prepared.accountAddress)
+    ) {
+      resetAvnuSwap();
+      throw new Error("WALLET CHANGED. QUOTE AGAIN.");
     }
-  }
+    const [{ getQuotes, quoteToCalls }, { ChainId, getPresets }] = await Promise.all([
+      import("@avnu/avnu-sdk"),
+      import("starkzap"),
+    ]);
+    const tokens = getPresets(ChainId.MAINNET);
+    const quotes = await getQuotes({
+      sellTokenAddress: tokens.STRK.address,
+      buyTokenAddress: tokens.USDC.address,
+      sellAmount: prepared.sellAmountRaw,
+      takerAddress: prepared.accountAddress,
+      size: 1,
+    });
+    const freshQuote = quotes[0];
+    if (!freshQuote) throw new Error("NO FRESH AVNU ROUTE.");
+    const freshBuyAmount = BigInt(freshQuote.buyAmount);
+    const consentFloor = BigInt(prepared.review.minimumBuyAmountRaw);
+    const availableSlippageBps = freshBuyAmount > consentFloor
+      ? Number((freshBuyAmount - consentFloor) * BigInt(10_000) / freshBuyAmount)
+      : 0;
+    if (availableSlippageBps < 1) {
+      const review = avnuSwapReview(freshQuote, prepared.review.sellAmount, prepared.accountAddress, prepared.generation);
+      preparedAvnuSwapRef.current = { ...prepared, review };
+      return { status: "repriced" as const, review };
+    }
+    const executionSlippage = Math.min(50, availableSlippageBps) / 10_000;
+    const built = await quoteToCalls({
+      quoteId: freshQuote.quoteId,
+      slippage: executionSlippage,
+      takerAddress: prepared.accountAddress,
+      executeApprove: true,
+    });
+    const calls = validateAvnuSwapCalls({
+      built,
+      quote: freshQuote,
+      takerAddress: prepared.accountAddress,
+      slippage: executionSlippage,
+      expectedChainId: ChainId.MAINNET.toFelt252(),
+      expectedSellTokenAddress: tokens.STRK.address,
+      expectedBuyTokenAddress: tokens.USDC.address,
+      expectedSellAmount: prepared.sellAmountRaw,
+      expectedMinimumOutput: consentFloor,
+    });
+    if (
+      prepared.generation !== sessionGenerationRef.current
+      || accountRef.current !== prepared.account
+      || session?.network !== "mainnet"
+      || tokenKey(session.address) !== tokenKey(prepared.accountAddress)
+    ) {
+      resetAvnuSwap();
+      throw new Error("WALLET CHANGED. QUOTE AGAIN.");
+    }
+    resetAvnuSwap();
+    const result = await prepared.account.executePaymasterTransaction(calls, {
+      feeMode: { mode: "default", gasToken: session.strkAddress },
+      timeBounds: { executeBefore: Math.floor(Date.now() / 1000) + 300 },
+    });
+    return { status: "submitted" as const, transactionHash: result.transaction_hash };
+  }, [resetAvnuSwap, session]);
+
+  useEffect(() => {
+    onSwapCommandsChange?.({ quote: quoteAvnuSwap, submit: submitAvnuSwap });
+    return () => onSwapCommandsChange?.(null);
+  }, [onSwapCommandsChange, quoteAvnuSwap, submitAvnuSwap]);
 
   function privateAction(): STRK20_ACTION {
     if (!session) throw new Error("CONNECT A WALLET.");
@@ -641,54 +678,32 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onTransferComm
         <section className="wallet-rail-panel">
           <div className="wallet-panel-head"><span>LIVE / {session.walletName}</span><b>{session.chainLiteral}</b></div>
           {status && <p className="privacy-wallet-status" role="status">{status}</p>}
-          <div className="wallet-panel-tabs" role="tablist" aria-label="Wallet rail">
-            <button role="tab" aria-selected={panelMode === "private"} className={panelMode === "private" ? "active" : ""} onClick={() => setPanelMode("private")}>PRIVATE</button>
-            <button role="tab" aria-selected={panelMode === "swap"} className={panelMode === "swap" ? "active" : ""} onClick={() => setPanelMode("swap")}>SWAP</button>
+          <div className="private-balance-strip">
+            {privateBalances.length > 0 ? privateBalances.map((balance) => <div key={balance.symbol}><span>{balance.symbol}</span><b>{balance.amount}</b></div>) : <div><span>PRIVATE BALANCE</span><b>—</b></div>}
+            <button onClick={() => accountRef.current && providerRef.current && refreshPrivacy(accountRef.current, providerRef.current, session, sessionGenerationRef.current)} disabled={privacyBusy} aria-label="Refresh private balances">↻</button>
           </div>
-          {panelMode === "swap" ? (
-            <>
-              <label><span>SELL STRK</span><input value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setQuote(null); setSwapTxHash(""); }} inputMode="decimal" maxLength={32} disabled={railBusy} /></label>
-              <div className="wallet-quote"><span>GET USDC</span><b>{quoteLabel || "GET A LIVE AVNU QUOTE"}</b></div>
-              <div className="avnu-quote-grid">
-                <span>GAS</span><b>{session.network === "sepolia" ? "QUOTE ONLY" : "PAY IN STRK"}</b>
-                <span>SLIPPAGE CAP</span><b>0.5%</b>
-                {quote && <><span>ROUTE</span><b>{[...new Set(quote.routes.map((route) => route.name))].join(" + ") || "AVNU"}</b><span>PRICE IMPACT</span><b>{(quote.priceImpact / 100).toFixed(2)}%</b></>}
-              </div>
-              {!quote && <button className="wallet-rail-action" onClick={fetchAvnuQuote} disabled={railBusy}>QUOTE ON AVNU ↗</button>}
-              {quote && session.network === "mainnet" && <button className="wallet-rail-action private-confirm" onClick={executeAvnuSwap} disabled={railBusy}>SWAP WITH AVNU PAYMASTER ↗</button>}
-              {quote && session.network === "sepolia" && <button className="wallet-rail-action" disabled>MAINNET SWAP ONLY</button>}
-              {swapTxHash && <a className="privacy-tx-link" href={`${session.network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online"}/tx/${swapTxHash}`} target="_blank" rel="noreferrer">VIEW SWAP ↗</a>}
-            </>
-          ) : (
-            <>
-              <div className="private-balance-strip">
-                {privateBalances.length > 0 ? privateBalances.map((balance) => <div key={balance.symbol}><span>{balance.symbol}</span><b>{balance.amount}</b></div>) : <div><span>PRIVATE BALANCE</span><b>—</b></div>}
-                <button onClick={() => accountRef.current && providerRef.current && refreshPrivacy(accountRef.current, providerRef.current, session, sessionGenerationRef.current)} disabled={privacyBusy} aria-label="Refresh private balances">↻</button>
-              </div>
-              <div className="private-action-tabs">
-                <button className={privateKind === "deposit" ? "active" : ""} onClick={() => { setPrivateKind("deposit"); resetPrivatePreview(); }}>SHIELD</button>
-                <button className={privateKind === "transfer" ? "active" : ""} onClick={() => { setPrivateKind("transfer"); resetPrivatePreview(); }}>SEND</button>
-                <button className={privateKind === "withdraw" ? "active" : ""} onClick={() => { setPrivateKind("withdraw"); resetPrivatePreview(); }}>UNSHIELD</button>
-              </div>
-              <label><span>STRK AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /></label>
-              {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
-              {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy}>CONFIRM IN WALLET ↗</button>}
-              <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
-              {privateTxHash && <a className="privacy-tx-link" href={`${session.network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online"}/tx/${privateTxHash}`} target="_blank" rel="noreferrer">VIEW TRANSACTION ↗</a>}
-              {shadow && <div className="shadow-account-card"><span>BOOTY BANK SHADOW / 00</span><b>{shortAddress(shadow.address)}</b><small>{shadow.deployment === "deployed" ? "DEPLOYED" : shadow.deployment === "undeployed" ? "FUNDABLE BEFORE DEPLOYMENT" : "DEPLOYMENT NOT VERIFIED"} / {shadow.balance} STRK</small></div>}
-              <p className="privacy-edge-note">PRIVATE INSIDE THE POOL. SHIELDING, UNSHIELDING, AND TIMING REMAIN PUBLIC.</p>
-            </>
-          )}
+          <div className="private-action-tabs">
+            <button className={privateKind === "deposit" ? "active" : ""} onClick={() => { setPrivateKind("deposit"); resetPrivatePreview(); }}>SHIELD</button>
+            <button className={privateKind === "transfer" ? "active" : ""} onClick={() => { setPrivateKind("transfer"); resetPrivatePreview(); }}>SEND</button>
+            <button className={privateKind === "withdraw" ? "active" : ""} onClick={() => { setPrivateKind("withdraw"); resetPrivatePreview(); }}>UNSHIELD</button>
+          </div>
+          <label><span>STRK AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /></label>
+          {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
+          {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy}>CONFIRM IN WALLET ↗</button>}
+          <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
+          {privateTxHash && <a className="privacy-tx-link" href={`${session.network === "sepolia" ? "https://sepolia.voyager.online" : "https://voyager.online"}/tx/${privateTxHash}`} target="_blank" rel="noreferrer">VIEW TRANSACTION ↗</a>}
+          {shadow && <div className="shadow-account-card"><span>BOOTY BANK SHADOW / 00</span><b>{shortAddress(shadow.address)}</b><small>{shadow.deployment === "deployed" ? "DEPLOYED" : shadow.deployment === "undeployed" ? "FUNDABLE BEFORE DEPLOYMENT" : "DEPLOYMENT NOT VERIFIED"} / {shadow.balance} STRK</small></div>}
+          <p className="privacy-edge-note">PRIVATE INSIDE THE POOL. SHIELDING, UNSHIELDING, AND TIMING REMAIN PUBLIC.</p>
         </section>
       )}
     </div>
   );
 }
 
-export default function StarknetWalletControl({ requiredNetwork, onSessionChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: MainnetSessionSnapshot | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void } = {}) {
+export default function StarknetWalletControl({ requiredNetwork, onSessionChange, onSwapCommandsChange, onTransferCommandsChange }: { requiredNetwork?: NetworkName; onSessionChange?: (session: MainnetSessionSnapshot | null) => void; onSwapCommandsChange?: (commands: AvnuSwapCommands | null) => void; onTransferCommandsChange?: (commands: PublicTransferCommands | null) => void } = {}) {
   return (
     <div className="starknet-wallet-control" aria-label="Starknet wallet controls">
-      <NativeStarknetWallet requiredNetwork={requiredNetwork} onSessionChange={onSessionChange} onTransferCommandsChange={onTransferCommandsChange} />
+      <NativeStarknetWallet requiredNetwork={requiredNetwork} onSessionChange={onSessionChange} onSwapCommandsChange={onSwapCommandsChange} onTransferCommandsChange={onTransferCommandsChange} />
       <PrivyPlaceholder />
     </div>
   );

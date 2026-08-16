@@ -753,6 +753,24 @@ main { min-height: 100vh; overflow: clip; }
 .mainnet-transfer-receipt p { max-width: 62ch; margin: 0; font-size: 12px; line-height: 1.55; font-weight: 700; }
 .mainnet-transfer-receipt > b { overflow-wrap: anywhere; font-size: 11px; }
 .mainnet-transfer-receipt a { width: max-content; border-bottom: 1px solid currentColor; color: var(--ink); text-decoration: none; font-size: 9px; }
+.mainnet-swap-card { margin: 42px 0; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+.mainnet-swap-form { display: grid; grid-template-columns: minmax(0, 1fr) 210px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.mainnet-swap-input { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px 18px; border-right: 1px solid var(--ink); padding: 22px; }
+.mainnet-swap-input label { min-width: 0; display: grid; gap: 10px; }
+.mainnet-swap-input label span, .mainnet-swap-input small { font-size: 9px; }
+.mainnet-swap-input input { min-width: 0; min-height: 70px; border: 0; border-bottom: 1px solid var(--ink); padding: 0; color: var(--ink); background: transparent; font-size: clamp(36px, 6vw, 74px); font-weight: 700; letter-spacing: -.055em; }
+.mainnet-swap-input > b { padding-bottom: 16px; font-size: 16px; }
+.mainnet-swap-input small { grid-column: 1 / -1; }
+.mainnet-swap-form > button, .mainnet-swap-review button { min-height: 52px; border: 0; padding: 16px; color: var(--ink); background: var(--accent); cursor: pointer; font-size: 9px; font-weight: 700; }
+.mainnet-swap-form > button:disabled, .mainnet-swap-review button:disabled { cursor: wait; opacity: .55; }
+.mainnet-swap-review { grid-column: 1 / -1; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 12px 20px; border-top: 1px solid var(--ink); padding: 22px; }
+.mainnet-swap-review > p { grid-column: 1 / -1; margin: -22px -22px 10px; border-bottom: 1px solid var(--ink); padding: 14px 22px; background: var(--accent); font-size: 9px; font-weight: 700; }
+.mainnet-swap-review > span, .mainnet-swap-review > small { font-size: 9px; }
+.mainnet-swap-review > strong { font-size: clamp(28px, 4vw, 54px); line-height: .9; letter-spacing: -.05em; }
+.mainnet-swap-review > b { overflow-wrap: anywhere; font-size: 12px; }
+.mainnet-swap-review > small { grid-column: 1 / -1; max-width: 76ch; line-height: 1.5; }
+.mainnet-swap-review > div { grid-column: 1 / -1; display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+.mainnet-swap-review button.secondary { border: 1px solid var(--ink); color: var(--ink); background: transparent; }
 .mainnet-route-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
 .mainnet-route-actions a { min-height: 64px; display: flex; align-items: center; justify-content: space-between; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 0 16px; color: var(--ink); text-decoration: none; font-size: 10px; font-weight: 700; }
 .mainnet-route-actions a:hover { color: var(--paper); background: var(--ink); }
@@ -810,6 +828,13 @@ main { min-height: 100vh; overflow: clip; }
   .mainnet-transfer-review > small, .mainnet-transfer-review > div { grid-column: 1; }
   .mainnet-transfer-review > div { grid-template-columns: 1fr; }
   .mainnet-transfer-receipt { padding: 18px 14px; }
+  .mainnet-swap-form { grid-template-columns: 1fr; }
+  .mainnet-swap-input { border-right: 0; border-bottom: 1px solid var(--ink); padding: 16px 14px; }
+  .mainnet-swap-form > button { min-height: 58px; }
+  .mainnet-swap-review { grid-template-columns: 1fr; padding: 18px 14px; }
+  .mainnet-swap-review > p { grid-column: 1; margin: -18px -14px 8px; padding: 12px 14px; }
+  .mainnet-swap-review > small, .mainnet-swap-review > div { grid-column: 1; }
+  .mainnet-swap-review > div { grid-template-columns: 1fr; }
   .mainnet-route-actions { grid-template-columns: 1fr; }
   .mainnet-mobile-nav { position: fixed; z-index: 130; right: 0; bottom: 0; left: 0; height: 60px; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line-light); padding: 5px; background: var(--ink); }
   .mainnet-mobile-nav a { display: grid; place-items: center; align-content: center; gap: 4px; color: rgba(242, 239, 230, .6); text-decoration: none; }
