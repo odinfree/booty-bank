@@ -5,13 +5,14 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://bootybank.app"),
   title: "Booty Bank — Borrow Against Your BBL",
-  description: "Private creator banking with a 28-test Falcon-512 account contract on Starknet.",
+  description:
+    "The account that can't dump you. Self-custody, a lender packet for creator income, private by default. Post-quantum durability underneath.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "BOOTY BANK",
-    description: "POST-QUANTUM READY. FALCON-512 ACCOUNT CONTRACT.",
+    description: "THE ACCOUNT THAT CAN'T DUMP YOU. BORROW AGAINST YOUR BBL.",
     url: "/",
     siteName: "Booty Bank",
     type: "website",
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "BOOTY BANK",
-    description: "POST-QUANTUM READY. FALCON-512 ACCOUNT CONTRACT.",
+    description: "THE ACCOUNT THAT CAN'T DUMP YOU. BORROW AGAINST YOUR BBL.",
     images: ["/og-image.png"],
   },
 };
