@@ -650,6 +650,35 @@ main { min-height: 100vh; overflow: clip; }
   .app-toast { position: fixed; right: 12px; bottom: 72px; left: 12px; }
 }
 
+/* Case file rows (USP section) */
+.case-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
+.case-rows li { border-bottom: 1px solid var(--ink); }
+.case-rows a { display: flex; align-items: baseline; gap: 20px; padding: 20px 0; text-decoration: none; }
+.case-rows i { font-style: normal; font-size: 10px; font-weight: 700; min-width: 30px; }
+.case-rows a > span { font-size: clamp(26px, 4.6vw, 64px); font-weight: 700; letter-spacing: -.035em; line-height: .95; }
+.case-rows s { text-decoration-thickness: .09em; opacity: .45; }
+.case-rows a:hover b, .case-rows a:focus-visible b { background: var(--ink); color: var(--accent); }
+
+/* The details (Q&A / SEO section) */
+.case-details { padding: 72px 24px 90px; background: var(--paper); color: var(--ink); }
+.case-details-head { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+.case-details h2 { margin: 34px 0 40px; font-size: clamp(44px, 7vw, 96px); line-height: .85; letter-spacing: -.05em; }
+.case-details dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 48px; margin: 0; }
+.case-details dt { padding-top: 14px; border-top: 1px solid var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+.case-details dd { margin: 12px 0 0; max-width: 62ch; font-size: 15px; line-height: 1.55; }
+.case-label { display: inline-block; margin: 14px 12px 0 0; padding: 5px 8px; border: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+.case-link { display: inline-block; margin-top: 14px; padding-bottom: 2px; border-bottom: 1px solid var(--ink); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-decoration: none; }
+.case-link:hover { background: var(--ink); color: var(--paper); }
+#durability { scroll-margin-top: 100px; }
+
+@media (max-width: 800px) {
+  .case-rows a { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 0; }
+  .case-rows a > span { display: flex; flex-direction: column; gap: 2px; font-size: clamp(30px, 9vw, 44px); }
+  .case-details { padding: 48px 12px 64px; }
+  .case-details-head { flex-direction: column; gap: 8px; }
+  .case-details dl { grid-template-columns: 1fr; gap: 28px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .file-layer, .app-toggle i { transition: none; }

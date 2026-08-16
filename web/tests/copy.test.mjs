@@ -126,6 +126,29 @@ test("landing keeps the prototype claim boundaries", async () => {
   assert.doesNotMatch(accountPage, /NO FUNDS MOVE/);
 });
 
+test("landing leads with the case file and keeps durability subordinate", async () => {
+  const page = await source("../src/app/page.tsx");
+
+  assert.match(page, /THE ACCOUNT<br \/>THAT CAN&apos;T<br \/>DUMP YOU\./);
+  for (const pair of [
+    ["DEBANKED\\.", "SELF-CUSTODY\\."],
+    ["INVISIBLE INCOME\\.", "LENDER PACKET\\."],
+    ["EXPOSED\\.", "PRIVATE BY DEFAULT\\."],
+  ]) {
+    assert.match(page, new RegExp(`<s>${pair[0]}</s> <b>${pair[1]}</b>`));
+  }
+  assert.match(page, /DURABILITY \/<br \/>POST-QUANTUM\./);
+  assert.doesNotMatch(page, /OPEN SECURITY FILE/);
+  assert.doesNotMatch(page, /POST-QUANTUM<br \/>READY\./);
+
+  const caseSection = page.match(/className="pq-declaration"[\s\S]*?<\/ol>/)?.[0] ?? "";
+  assert.ok(caseSection.length > 0, "case rows section not found");
+  assert.doesNotMatch(caseSection, /QUANTUM|FALCON/i);
+  assert.match(page, /THE PACKET OMITS: FEED \/ FAN LIST \/ LEGAL NAME/);
+  assert.match(page, /id="durability"/);
+  assert.match(page, /SOURCE DOCUMENT \/ @METACHASER24/);
+});
+
 test("visible product copy avoids the rejected long slogans", async () => {
   const files = await Promise.all([
     source("../src/app/page.tsx"),
