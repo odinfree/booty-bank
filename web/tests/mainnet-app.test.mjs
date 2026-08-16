@@ -117,3 +117,18 @@ test("Mainnet account and transaction links open on Starkscan", async () => {
     assert.doesNotMatch(page, /voyager\.online/);
   }
 });
+
+test("STRK20 controls shield, transfer, and unshield selectable tokens through a capable wallet", async () => {
+  const wallet = await source("../src/components/starknet-wallet-control.tsx");
+
+  assert.match(wallet, /walletV6\.supportedWalletApi/);
+  assert.match(wallet, /compareVersions/);
+  assert.match(wallet, /privateSymbol/);
+  assert.match(wallet, /<option value="STRK">STRK<\/option>/);
+  assert.match(wallet, /<option value="USDC">USDC<\/option>/);
+  assert.match(wallet, /strk20PrepareInvoke/);
+  assert.match(wallet, /strk20InvokeTransaction/);
+  assert.match(wallet, /TWO WALLET STEPS/);
+  assert.match(wallet, /SAVE THIS HASH FOR STRK20\.JSON/);
+  assert.doesNotMatch(wallet, /void refreshPrivacy\(account, provider, nextSession, generation\)/);
+});

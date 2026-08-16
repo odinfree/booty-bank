@@ -170,9 +170,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   const [connecting, setConnecting] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [privacyBusy, setPrivacyBusy] = useState(false);
+  const [privacySupported, setPrivacySupported] = useState(false);
   const [privacyStatus, setPrivacyStatus] = useState("CONNECT A STRK20 WALLET.");
   const [privateBalances, setPrivateBalances] = useState<PrivateBalance[]>([]);
   const [privateKind, setPrivateKind] = useState<PrivateActionKind>("deposit");
+  const [privateSymbol, setPrivateSymbol] = useState<PrivateBalance["symbol"]>("STRK");
   const [privateAmount, setPrivateAmount] = useState("1");
   const [privateRecipient, setPrivateRecipient] = useState("");
   const [privatePreviewed, setPrivatePreviewed] = useState(false);
@@ -253,7 +255,9 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     resetPrivatePreview();
     resetPublicTransfer();
     resetAvnuSwap();
-    const { RpcProvider, WalletAccountV6 } = await import("starknet");
+    const { compareVersions, RpcProvider, walletV6, WalletAccountV6 } = await import("starknet");
+    const walletApiVersions = await walletV6.supportedWalletApi(wallet).catch(() => []);
+    const supportsStrk20 = walletApiVersions.some((version) => compareVersions(String(version), "0.10.3") >= 0);
     const walletChain = wallet.accounts[0]?.chains[0];
     const networkCandidates = [walletChain, ...wallet.chains].map((chain) => networkFromChain(chain)).filter((value): value is NetworkName => value !== null);
     let network = requiredNetwork && networkCandidates.includes(requiredNetwork) ? requiredNetwork : networkCandidates[0];
@@ -304,6 +308,8 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     providerRef.current = provider;
     walletRef.current = wallet;
     setSession(nextSession);
+    setPrivacySupported(supportsStrk20);
+    setPrivacyStatus(supportsStrk20 ? "STRK20 READY. LOAD PRIVATE BALANCES WHEN YOU CHOOSE." : "THIS WALLET DOES NOT EXPOSE STRK20 WALLET API 0.10.3.");
     onSessionChange?.(nextSession);
     setChooserOpen(false);
     setStatus("");
@@ -314,10 +320,10 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       resetPublicTransfer();
       resetAvnuSwap();
       setSession(null);
+      setPrivacySupported(false);
       onSessionChange?.(null);
       void attachWallet(wallet, true).catch(() => setStatus("ACCOUNT REFRESH FAILED."));
     });
-    void refreshPrivacy(account, provider, nextSession, generation);
   }, [onSessionChange, refreshPrivacy, requiredNetwork, resetAvnuSwap, resetPrivatePreview, resetPublicTransfer]);
 
   useEffect(() => {
@@ -371,6 +377,18 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [chooserOpen]);
 
+  useEffect(() => {
+    const openStrk20 = () => {
+      if (accountRef.current) setPanelOpen(true);
+      else {
+        discoveryRefreshRef.current?.();
+        setChooserOpen(true);
+      }
+    };
+    window.addEventListener("bootybank:open-strk20", openStrk20);
+    return () => window.removeEventListener("bootybank:open-strk20", openStrk20);
+  }, []);
+
   async function connectWallet(wallet: WalletWithStarknetFeatures) {
     setConnecting(true);
     setStatus("");
@@ -408,6 +426,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       onSessionChange?.(null);
       setPanelOpen(false);
       setPrivateBalances([]);
+      setPrivacySupported(false);
       setShadow(null);
       setPrivacyBusy(false);
       window.localStorage.removeItem(WALLET_SESSION_KEY);
@@ -586,12 +605,15 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
 
   function privateAction(): STRK20_ACTION {
     if (!session) throw new Error("CONNECT A WALLET.");
+    if (!privacySupported) throw new Error("CONNECTED WALLET DOES NOT SUPPORT STRK20.");
+    const asset = session.assets.find((candidate) => candidate.symbol === privateSymbol);
+    if (!asset) throw new Error("TOKEN IS NOT AVAILABLE ON THIS NETWORK.");
     return buildStrk20Action({
       kind: privateKind,
-      token: session.strkAddress,
+      token: asset.address,
       amount: privateAmount,
       recipient: privateRecipient,
-      decimals: 18,
+      decimals: asset.decimals,
     }) as STRK20_ACTION;
   }
 
@@ -646,13 +668,15 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     }
     privateOperationRef.current = true;
     setPrivacyBusy(true);
-    setPrivacyStatus("APPROVE IN WALLET. PROOF GENERATION CAN TAKE TIME…");
+    setPrivacyStatus(prepared.action.type === "deposit"
+      ? "TWO WALLET STEPS: APPROVE TOKEN, THEN APPROVE SHIELDING. PROOF GENERATION CAN TAKE TIME…"
+      : "APPROVE IN WALLET. PROOF GENERATION CAN TAKE TIME…");
     try {
       const result = await prepared.account.strk20InvokeTransaction([prepared.action]);
       setPrivateTxHash(result.transaction_hash);
       preparedPrivateActionRef.current = null;
       setPrivatePreviewed(false);
-      setPrivacyStatus("PRIVATE TRANSACTION SUBMITTED.");
+      setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON.");
       if (providerRef.current) await refreshPrivacy(prepared.account, providerRef.current, session, prepared.generation);
     } catch (error) {
       setPrivacyStatus(errorLabel(error, "PRIVATE TRANSACTION FAILED."));
@@ -722,16 +746,17 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
           {status && <p className="privacy-wallet-status" role="status">{status}</p>}
           <div className="private-balance-strip">
             {privateBalances.length > 0 ? privateBalances.map((balance) => <div key={balance.symbol}><span>{balance.symbol}</span><b>{balance.amount}</b></div>) : <div><span>PRIVATE BALANCE</span><b>—</b></div>}
-            <button onClick={() => accountRef.current && providerRef.current && refreshPrivacy(accountRef.current, providerRef.current, session, sessionGenerationRef.current)} disabled={privacyBusy} aria-label="Refresh private balances">↻</button>
+            <button onClick={() => accountRef.current && providerRef.current && refreshPrivacy(accountRef.current, providerRef.current, session, sessionGenerationRef.current)} disabled={privacyBusy || !privacySupported} aria-label="Load private balances from wallet">↻</button>
           </div>
           <div className="private-action-tabs">
             <button className={privateKind === "deposit" ? "active" : ""} onClick={() => { setPrivateKind("deposit"); resetPrivatePreview(); }}>SHIELD</button>
             <button className={privateKind === "transfer" ? "active" : ""} onClick={() => { setPrivateKind("transfer"); resetPrivatePreview(); }}>SEND</button>
             <button className={privateKind === "withdraw" ? "active" : ""} onClick={() => { setPrivateKind("withdraw"); resetPrivatePreview(); }}>UNSHIELD</button>
           </div>
-          <label><span>STRK AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /></label>
+          <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}><option value="STRK">STRK</option><option value="USDC">USDC</option></select></label>
+          <label><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /><small>PUBLIC / {session.assets.find((asset) => asset.symbol === privateSymbol)?.amount ?? "—"} {privateSymbol} · PRIVATE / {privateBalances.find((balance) => balance.symbol === privateSymbol)?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small></label>
           {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
-          {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy}>CONFIRM IN WALLET ↗</button>}
+          {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy || !privacySupported}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy || !privacySupported}>CONFIRM IN WALLET ↗</button>}
           <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
           {privateTxHash && <a className="privacy-tx-link" href={explorerTransactionUrl(session.network, privateTxHash)} target="_blank" rel="noreferrer">VIEW ON {explorerName(session.network)} ↗</a>}
           {shadow && <div className="shadow-account-card"><span>BOOTY BANK SHADOW / 00</span><b>{shortAddress(shadow.address)}</b><small>{shadow.deployment === "deployed" ? "DEPLOYED" : shadow.deployment === "undeployed" ? "FUNDABLE BEFORE DEPLOYMENT" : "DEPLOYMENT NOT VERIFIED"} / {shadow.balance} STRK</small></div>}

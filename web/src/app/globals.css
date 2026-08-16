@@ -254,7 +254,9 @@ main { min-height: 100vh; overflow: clip; }
 .wallet-panel-tabs button.active, .private-action-tabs button.active { color: var(--paper); background: var(--ink); }
 .private-action-tabs { grid-template-columns: repeat(3, 1fr); }
 .wallet-rail-panel label { display: grid; gap: 7px; margin-bottom: 12px; font-size: 9px; }
-.wallet-rail-panel input { min-height: 50px; border: 1px solid var(--ink); padding: 0 12px; color: var(--ink); background: transparent; font-size: 24px; font-weight: 700; }
+.wallet-rail-panel input, .wallet-rail-panel select { min-height: 50px; border: 1px solid var(--ink); border-radius: 0; padding: 0 12px; color: var(--ink); background: transparent; font-size: 24px; font-weight: 700; }
+.wallet-rail-panel select { appearance: none; cursor: pointer; }
+.wallet-rail-panel label small { font-size: 8px; line-height: 1.35; }
 .wallet-rail-panel input.address-input { font-size: 12px; letter-spacing: -.01em; }
 .wallet-rail-action { min-height: 44px; display: grid; place-items: center; width: 100%; border: 1px solid var(--ink); color: var(--paper); background: var(--ink); cursor: pointer; text-align: center; text-decoration: none; font-size: 9px; font-weight: 700; }
 .wallet-rail-action:hover { color: var(--ink); background: var(--accent); }
@@ -268,6 +270,10 @@ main { min-height: 100vh; overflow: clip; }
 .privacy-wallet-status, .privacy-edge-note { margin: 10px 0 0; font-size: 9px; line-height: 1.4; font-weight: 700; }
 .privacy-edge-note { border-top: 1px solid var(--ink); padding-top: 10px; }
 .privacy-tx-link { display: block; margin-top: 10px; color: var(--ink); font-size: 9px; font-weight: 700; }
+.mainnet-privacy-launch { display: grid; gap: 14px; border: 1px solid var(--ink); padding: clamp(18px, 3vw, 40px); background: var(--purple); color: var(--paper); }
+.mainnet-privacy-launch span, .mainnet-privacy-launch p { max-width: 680px; font-size: 11px; font-weight: 700; line-height: 1.35; }
+.mainnet-privacy-launch h2 { margin: 0; font-size: clamp(32px, 6vw, 82px); line-height: .88; }
+.mainnet-privacy-launch button { width: fit-content; min-height: 48px; border: 1px solid var(--paper); padding: 0 18px; color: var(--paper); background: transparent; cursor: pointer; font-size: 11px; font-weight: 700; }
 .shadow-account-card { display: grid; gap: 5px; margin-top: 12px; border: 1px solid var(--ink); padding: 10px; background: var(--purple); color: var(--paper); }
 .shadow-account-card span, .shadow-account-card small { font-size: 8px; font-weight: 700; }
 .shadow-account-card b { font-size: 13px; }
