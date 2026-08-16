@@ -13,12 +13,14 @@ export const PRIVACY_FEATURES = Object.freeze([
   { name: "FALCON-512 CONTRACT", status: "LOCAL TESTS", layer: "ACCOUNT" },
   { name: "EXACT EARNINGS OFFCHAIN", status: "BUILT", layer: "DATA" },
   { name: "SELECTIVE LENDER PACKET", status: "DEMO", layer: "CREDIT" },
+  { name: "STRK20 WALLET RAIL", status: "BUILT", layer: "MONEY" },
+  { name: "WALLET-OWNED NOTE DISCOVERY", status: "BUILT", layer: "WALLET" },
+  { name: "SHADOW ACCOUNT DISCOVERY", status: "BUILT", layer: "ACCOUNT GRAPH" },
   { name: "STRK20 SHIELDED PAYOUTS", status: "NEXT", layer: "MONEY" },
-  { name: "PRIVATE SUB-ACCOUNTS", status: "NEXT", layer: "ACCOUNT GRAPH" },
-  { name: "VIEWING-KEY DISCLOSURE", status: "NEXT", layer: "COMPLIANCE" },
+  { name: "SHADOW ACCOUNT EXECUTION", status: "NEXT", layer: "ACCOUNT GRAPH" },
+  { name: "WALLET-APPROVED DISCLOSURE", status: "NEXT", layer: "COMPLIANCE" },
   { name: "RELAYER + PAYMASTER", status: "NEXT", layer: "NETWORK" },
   { name: "BATCHED PUBLISHING", status: "ROADMAP", layer: "TIMING" },
-  { name: "PRIVATE NOTE DISCOVERY", status: "ROADMAP", layer: "WALLET" },
   { name: "DUAL-PROOF KEY ROTATION", status: "BUILT", layer: "ACCOUNT" },
   { name: "PQ RECOVERY", status: "ROADMAP", layer: "ACCOUNT" },
 ]);
@@ -59,7 +61,7 @@ export const CORE_MONEY_FEATURES = Object.freeze([
   { group: "CREDIT", name: "CREATOR INCOME ADVANCE", status: "DEMO" },
   { group: "SECURITY", name: "BIOMETRICS + PASSKEY RECOVERY", status: "ROADMAP" },
   { group: "SECURITY", name: "FRAUD ALERTS + 24/7 SUPPORT", status: "PARTNER" },
-  { group: "SECURITY", name: "FALCON-512 PQ-READY ACCOUNT", status: "BUILT" },
+  { group: "SECURITY", name: "FALCON-512 PQ-READY ACCOUNT", status: "LOCAL TESTS" },
 ]);
 
 function finiteNumber(value, field) {

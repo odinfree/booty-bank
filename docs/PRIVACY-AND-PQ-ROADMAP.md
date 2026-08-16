@@ -30,6 +30,22 @@ The account code is experimental and unaudited. The next release gate is an inde
 
 The web demo includes seven primary-account areas. Home, Payments, Cards, Plan, Wealth, Creator, and Privacy stay available through one navigation system. A creator can inspect balances and activity, control cards, send sample payments, preview exchange, automate payout splits, connect income, create a private lender packet, run fan perks, and review data access. The public packet test fails if platform identity or exact earnings enter the public object.
 
+### STRK20 wallet rail
+
+The connected-wallet panel uses the Starknet Wallet API rather than collecting viewing keys or discovering private notes inside the dapp. A compatible wallet owns note discovery, viewing keys, proof generation, approval, and submission.
+
+The rail currently supports:
+
+- wallet-standard discovery and connection through Get Starknet v6;
+- private STRK and USDC balance reads through `strk20Balances`;
+- shield, private transfer, and unshield action construction;
+- proof-free simulation through `strk20PrepareInvoke(actions, true)` before approval;
+- wallet-owned proof generation and submission through `strk20InvokeTransaction`;
+- deterministic Booty Bank shadow-account discovery, including deployed and fundable-before-deployment state;
+- live public STRK balance reads and AVNU STRK-to-USDC quotes.
+
+Ready and Xverse are the currently documented STRK20-capable wallets. Unsupported wallets stay connected for public reads but receive no simulated private state. The UI states that shielding, unshielding, timing, and shadow-account contents can remain public.
+
 ## Privacy architecture
 
 | Layer | Hidden from the public | Visible or disclosed | Status |
@@ -38,20 +54,20 @@ The web demo includes seven primary-account areas. Home, Payments, Cards, Plan, 
 | Account authorization | Falcon secret key | Account address, public key, transaction calls | Built, local tests |
 | Credit review | Full evidence packet | Review band and lender-selected disclosures | Demo |
 | Regulated identity | Creator identity from merchants and the public | Bank, EMI, lender, and required compliance operators | Design |
-| Money movement | Owner link and shielded balances | Pool actions and the route's remaining metadata | Next |
-| App activity | Main-wallet and sibling-account link | Fresh sub-account, destination, timing, amount, and app state | Next |
-| Audit access | Viewing key from public observers | Defined disclosure operator under a controlled process | Next |
+| Money movement | Sender, receiver, token, amount, notes inside the STRK20 pool | Shielding, unshielding, timing, and route metadata | Wallet rail built |
+| App activity | Link from the main wallet to a shadow identity | Shadow-account balances, calls, timing, and app state | Discovery built; execution next |
+| Audit access | Wallet viewing key from the dapp and public observers | Wallet-approved disclosure under a controlled process | Wallet-owned design |
 | Network metadata | Direct creator-to-publish timing link | Relayer, paymaster, and batch metadata | Roadmap |
 
 ## Next build
 
 ### STRK20 payout vault
 
-Route supported digital-dollar payouts into shielded ERC-20 state. Add private note discovery, shielded balance display, withdrawal, and a scoped viewing-key path for regulated review.
+Route supported digital-dollar payouts into shielded ERC-20 state. The generic wallet rail already displays shielded balances and constructs withdrawals. Payout automation still needs a dedicated `privacy_invoke` anonymizer, tests, deployment evidence, and a wallet-approved regulated-disclosure flow. Booty Bank will not request or store the user's viewing key.
 
 ### Private sub-accounts
 
-Create a fresh Starknet account for each high-leakage financial action. The privacy target is account-graph separation between the creator's core account, each app account, and sibling accounts. The sub-account's app calls and local position state can remain public.
+Use STRK20 shadow accounts for persistent pseudonymous app positions. Nonce `0` is derived in the web rail today and its deployment state is read from chain. Executing positions through `shadow_account_invoke`, nonce rotation, and recovery remain gated behind call-policy tests.
 
 ### Relayer and paymaster
 

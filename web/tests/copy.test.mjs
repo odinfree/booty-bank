@@ -103,17 +103,22 @@ test("the account opens in standard mode and private mode is opt-in", async () =
 });
 
 test("landing keeps the prototype claim boundaries", async () => {
-  const footer = await source("../src/components/site-footer.tsx");
+  const [footer, accountPage] = await Promise.all([
+    source("../src/components/site-footer.tsx"),
+    source("../src/app/app/page.tsx"),
+  ]);
 
   for (const boundary of [
-    "DEMO ONLY",
-    "SAMPLE DATA",
-    "NO ACCOUNTS, CARDS, CREDIT, OR INVESTMENTS",
+    "SAMPLE BANKING DATA",
+    "WALLET ACTIONS REQUIRE APPROVAL",
+    "NO ISSUED ACCOUNTS, CARDS, CREDIT, OR INVESTMENTS",
     "NOT A BANK",
     "NOT AFFILIATED WITH ONLYFANS",
   ]) {
     assert.ok(footer.includes(boundary), `Missing claim boundary: ${boundary}`);
   }
+  assert.match(accountPage, /LIVE WALLET ACTIONS REQUIRE APPROVAL/);
+  assert.doesNotMatch(accountPage, /NO FUNDS MOVE/);
 });
 
 test("visible product copy avoids the rejected long slogans", async () => {

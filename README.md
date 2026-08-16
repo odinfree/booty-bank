@@ -8,7 +8,7 @@ The goal is one account. A creator should not need Revolut beside it.
 
 [Open the interactive demo](https://bootybank.app/)
 
-Booty Bank is a hackathon prototype. It is not a licensed bank, is not affiliated with OnlyFans or Revolut, and does not move funds, issue cards, make credit decisions, or execute investments.
+Booty Bank is a hackathon prototype. It is not a licensed bank, is not affiliated with OnlyFans or Revolut, and does not issue accounts or cards, make credit decisions, or execute investments. The connected STRK20 rail can submit real wallet-approved transactions; the sample banking controls cannot.
 
 ## Product demo
 
@@ -22,7 +22,9 @@ The app has seven working areas.
 - Creator connects payout sources, creates a minimum lender packet, and runs fan rewards, drops, and creator-share programs.
 - Privacy controls disclosure, account authorization, shielded-money status, and the data-access log.
 
-The demo supports working interactions for balance redaction, navigation, transfers, exchange, card controls, payout automation, creator advances, and privacy review. Its Starknet read rail is real: browser wallets connect through Get Starknet and Starknet.js, balances are read onchain, and AVNU returns live STRK-to-USDC quotes. Swap execution stays locked until Booty Bank independently validates every builder-returned call. Every fiat rail that needs a licensed operator is labelled `PARTNER` or `ROADMAP`.
+The demo supports working interactions for balance redaction, navigation, transfers, exchange, card controls, payout automation, creator advances, and privacy review. Its Starknet rail is real: wallets connect through wallet-standard Get Starknet v6, public balances are read onchain, and AVNU returns live STRK-to-USDC quotes. Ready or Xverse can expose the [STRK20 Starknet Wallet API](https://strk20.starknet.io/docs/starknet-wallet-api/overview) for private balances, shield, private transfer, unshield, simulation, proof generation, and submission. Booty Bank never receives a viewing key. Swap execution stays locked until Booty Bank independently validates every builder-returned call. Every fiat rail that needs a licensed operator is labelled `PARTNER` or `ROADMAP`.
+
+The same wallet session derives a deterministic Booty Bank shadow account and distinguishes `DEPLOYED` from `FUNDABLE BEFORE DEPLOYMENT`. Shadow-account execution and a payout-specific anonymizer remain gated work; the interface does not claim they are live.
 
 Privy social login is a visible preview, not an active account path. The Worker contains owner-bound Starknet wallet creation behind verified Privy access tokens, but the public interface does not call it and no browser signing endpoint exists. Activation requires a transaction policy that binds chain, account, nonce, calls, expiry, and visible user intent before any signing route opens.
 
@@ -72,7 +74,7 @@ npm test
 npm run build
 ```
 
-The current local run passes 28 Cairo tests, 19 web tests, and 12 Worker tests. The production web export compiles successfully and is visually checked at desktop, short-desktop, and mobile widths.
+The current local run passes 28 Cairo tests, 23 web tests, and 12 Worker tests. The production web export compiles successfully and is visually checked at 390px, 790px, and 1440px widths.
 
 ## Production deployment
 
@@ -100,3 +102,4 @@ The [privacy and post-quantum build map](docs/PRIVACY-AND-PQ-ROADMAP.md) separat
 - OnlyFans neobank concept by [@Metachaser24](https://x.com/Metachaser24/status/2088277057457225901?s=20)
 - "Borrow against your BBL" by [@NoRampLabs](https://x.com/NoRampLabs/status/2088575905962549667?s=20)
 - Brought to our attention by [@8am1am](https://x.com/8am1am)
+- Starknet privacy inspection and shadow-account research informed by [Amanusk's snbeat](https://github.com/amanusk/snbeat)
