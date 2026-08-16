@@ -241,6 +241,8 @@ main { min-height: 100vh; overflow: clip; }
 .wallet-session > a:not(.wallet-session-main), .wallet-session > button:not(.wallet-session-main) { width: 32px; display: grid; place-items: center; border: 0; border-left: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; text-decoration: none; }
 .wallet-rail-panel { position: absolute; z-index: 120; top: 42px; right: -33px; width: min(420px, calc(100vw - 24px)); max-height: min(720px, calc(100vh - 72px)); overflow-y: auto; border: 1px solid var(--ink); padding: 14px; color: var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink); }
 .wallet-panel-head, .wallet-quote { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-size: 9px; }
+.avnu-quote-grid { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; margin: -2px 0 14px; border-top: 1px solid var(--ink); padding-top: 10px; font-size: 8px; }
+.avnu-quote-grid b { text-align: right; }
 .wallet-panel-tabs, .private-action-tabs { display: grid; grid-template-columns: repeat(2, 1fr); margin-bottom: 14px; border: 1px solid var(--ink); }
 .wallet-panel-tabs button, .private-action-tabs button { min-height: 36px; border: 0; border-right: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; font-size: 9px; font-weight: 700; }
 .wallet-panel-tabs button:last-child, .private-action-tabs button:last-child { border-right: 0; }

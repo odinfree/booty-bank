@@ -92,6 +92,9 @@ test("Privy social login is live only when configured and otherwise stays an hon
   assert.match(providers, /loginMethods: \["google", "email"\]/);
   assert.match(providers, /return children/);
   assert.doesNotMatch(control, /executeSwap/);
+  assert.match(control, /executePaymasterTransaction/);
+  assert.match(control, /validateAvnuSwapCalls/);
+  assert.match(control, /SWAP WITH AVNU PAYMASTER/);
 });
 
 test("the account opens in standard mode and private mode is opt-in", async () => {
