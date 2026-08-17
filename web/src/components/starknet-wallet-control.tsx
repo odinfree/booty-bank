@@ -674,8 +674,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       const result = await account.strk20InvokeTransaction([action]);
       if (generation !== sessionGenerationRef.current || accountRef.current !== account) return;
       setPrivateTxHash(result.transaction_hash);
-      setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON.");
-      if (providerRef.current) await refreshPrivacy(account, providerRef.current, currentSession, generation);
+      setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON. LOAD PRIVATE BALANCES WITH ↻ ONCE THE NOTE MATURES.");
     } catch (error) {
       if (generation !== sessionGenerationRef.current || accountRef.current !== account) return;
       const message = error instanceof Error ? error.message : String(error);
