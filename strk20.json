@@ -2,6 +2,7 @@
   "demo_url": "https://bootybank.app/",
   "pool_transactions": {
     "shield": "0x67ff0296ea2fde1ae05277da9b748decf207ea08c4b9992f6ec0c36acebf8b7",
+    "private_transfer": "0x0271d9d501de8e2660753f064465d39012b499887e2ab970ddb12cb5f9da78ad",
     "unshield": "0x42dfb618938b58767228568c8746d7a02e0247febc273e59ea3ecac0cf1d214"
   }
 }
