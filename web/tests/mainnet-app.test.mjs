@@ -138,6 +138,17 @@ test("STRK20 controls shield, transfer, and unshield selectable tokens through a
   assert.doesNotMatch(wallet, /void refreshPrivacy\(account, provider, nextSession, generation\)/);
 });
 
+test("the app shell marks live wallet routes apart from sample surfaces", async () => {
+  const shell = await source("../src/components/mainnet-app-shell.tsx");
+
+  assert.match(shell, /LIVE \/ WALLET DATA/);
+  assert.match(shell, /SAMPLE \/ DEMO DATA/);
+  assert.match(shell, /SELF-CUSTODIAL DEMO\./);
+  assert.match(shell, /NOT A BANK\./);
+  assert.match(shell, /bb-app-brief/);
+  assert.match(shell, /GOT IT/);
+});
+
 test("private actions run in one wallet step with honest waiting and failure states", async () => {
   const [wallet, launch] = await Promise.all([
     source("../src/components/starknet-wallet-control.tsx"),

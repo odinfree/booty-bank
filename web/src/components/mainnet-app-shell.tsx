@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MainnetAccountContext, type AvnuSwapCommands, type MainnetSessionSnapshot, type PublicTransferCommands } from "./mainnet-account-context";
 import StarknetWalletControl from "./starknet-wallet-control";
 
@@ -30,6 +30,17 @@ export default function MainnetAppShell({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<MainnetSessionSnapshot | null>(null);
   const [swapCommands, setSwapCommands] = useState<AvnuSwapCommands | null>(null);
   const [transferCommands, setTransferCommands] = useState<PublicTransferCommands | null>(null);
+  const [briefDismissed, setBriefDismissed] = useState(true);
+  const liveRoute = primary.some((item) => routeActive(pathname, item));
+
+  useEffect(() => {
+    setBriefDismissed(window.localStorage.getItem("bb-app-brief") === "done");
+  }, []);
+
+  function dismissBrief() {
+    window.localStorage.setItem("bb-app-brief", "done");
+    setBriefDismissed(true);
+  }
 
   return (
     <MainnetAccountContext.Provider value={{ session, swapCommands, transferCommands }}>
@@ -60,7 +71,16 @@ export default function MainnetAppShell({ children }: { children: ReactNode }) {
           <div className="mainnet-truth"><span>ACCOUNT MODEL</span><b>SELF-CUSTODIAL</b><small>EVERY LIVE AMOUNT COMES FROM YOUR CONNECTED WALLET.</small></div>
         </aside>
 
-        <section className="mainnet-content">{children}</section>
+        <section className="mainnet-content">
+          {!briefDismissed && (
+            <div className="app-first-run" role="note">
+              <p><b>SELF-CUSTODIAL DEMO.</b> LIVE ROUTES READ YOUR CONNECTED WALLET, AND EVERY ACTION NEEDS YOUR APPROVAL THERE. PARTNER SURFACES SHOW SAMPLE DATA. NOT A BANK.</p>
+              <button onClick={dismissBrief}>GOT IT</button>
+            </div>
+          )}
+          <div className={`app-mode-chip${liveRoute ? " live" : ""}`} role="status">{liveRoute ? "LIVE / WALLET DATA" : "SAMPLE / DEMO DATA"}</div>
+          {children}
+        </section>
       </div>
 
       <nav className="mainnet-mobile-nav" aria-label="Mobile account navigation">

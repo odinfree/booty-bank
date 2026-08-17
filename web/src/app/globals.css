@@ -691,6 +691,14 @@ main { min-height: 100vh; overflow: clip; }
 .mainnet-truth b { color: var(--accent); font-size: 10px; }
 .mainnet-truth small { max-width: 20ch; line-height: 1.45; }
 .mainnet-content { min-width: 0; min-height: calc(100svh - 74px); overflow-y: auto; background: var(--paper); }
+.app-first-run { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 24px 0; padding: 12px 14px; border: 1px solid var(--ink); background: var(--accent); color: var(--ink); }
+.app-first-run p { flex: 1 1 320px; margin: 0; font-size: 10px; font-weight: 700; letter-spacing: .05em; line-height: 1.5; }
+.app-first-run button { padding: 7px 12px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: 10px; font-weight: 700; letter-spacing: .05em; cursor: pointer; }
+.app-first-run button:hover { background: var(--paper); color: var(--ink); }
+.app-mode-chip { display: inline-flex; align-items: center; gap: 6px; margin: 14px 0 0 24px; font-size: 9px; font-weight: 700; letter-spacing: .08em; color: rgba(23, 23, 23, .55); }
+.app-mode-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: rgba(23, 23, 23, .3); }
+.app-mode-chip.live { color: var(--ink); }
+.app-mode-chip.live::before { background: var(--green); }
 .mainnet-overview, .mainnet-route { width: min(100%, 1280px); margin: 0 auto; padding: 26px; }
 .mainnet-route-head { min-height: 200px; display: flex; align-items: end; justify-content: space-between; gap: 32px; border-bottom: 1px solid var(--ink); padding-bottom: 22px; }
 .mainnet-route-head span { display: block; margin-bottom: 28px; font-size: 9px; }
