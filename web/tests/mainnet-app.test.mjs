@@ -167,3 +167,12 @@ test("private actions run in one wallet step with honest waiting and failure sta
   assert.match(wallet, /clearTimeout\(waitHint\)/);
   assert.doesNotMatch(launch, /TWO WALLET STEPS/);
 });
+
+test("unshield is one button back to the connected wallet", async () => {
+  const wallet = await source("../src/components/starknet-wallet-control.tsx");
+
+  assert.match(wallet, /privateKind === "withdraw" \? session\.address : privateRecipient/);
+  assert.match(wallet, /UNSHIELDS TO YOUR CONNECTED WALLET/);
+  assert.match(wallet, /privateKind === "transfer" && <label><span>PRIVATE RECIPIENT<\/span>/);
+  assert.doesNotMatch(wallet, /PUBLIC RECIPIENT/);
+});

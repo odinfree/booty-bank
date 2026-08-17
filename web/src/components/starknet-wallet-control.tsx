@@ -644,7 +644,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       kind: privateKind,
       token: asset.address,
       amount: privateAmount,
-      recipient: privateRecipient,
+      recipient: privateKind === "withdraw" ? session.address : privateRecipient,
       decimals: asset.decimals,
     }) as STRK20_ACTION;
   }
@@ -760,7 +760,8 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
           </div>
           <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}>{CORE_TOKEN_REGISTRY.map((token) => <option value={token.symbol} key={token.symbol}>{token.symbol}</option>)}</select></label>
           <label><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /><small>PUBLIC / {session.assets.find((asset) => asset.symbol === privateSymbol)?.amount ?? "—"} {privateSymbol} · PRIVATE / {privateBalances.find((balance) => balance.symbol === privateSymbol)?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small></label>
-          {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
+          {privateKind === "transfer" && <label><span>PRIVATE RECIPIENT</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
+          {privateKind === "withdraw" && <p className="privacy-wallet-status">UNSHIELDS TO YOUR CONNECTED WALLET / {shortAddress(session.address)}</p>}
           <button className="wallet-rail-action private-confirm" onClick={runPrivateAction} disabled={privacyBusy || !privacySupported}>{privateKind === "deposit" ? "SHIELD IN WALLET ↗" : privateKind === "transfer" ? "SEND IN WALLET ↗" : "UNSHIELD IN WALLET ↗"}</button>
           <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
           {privateTxHash && <a className="privacy-tx-link" href={explorerTransactionUrl(session.network, privateTxHash)} target="_blank" rel="noreferrer">VIEW ON {explorerName(session.network)} ↗</a>}
