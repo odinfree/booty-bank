@@ -222,7 +222,11 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
       let nextShadow: ShadowAccount | null = null;
       try {
         const { hash } = await import("starknet");
-        const commitment = await account.strk20ShadowAccountCommitment("BOOTY BANK", "0x0");
+        // Shadow-account commitments are not part of the pinned starknet.js 10.4.0 surface;
+        // feature-detect so the card renders only when the runtime supports it.
+        const shadowCommitment = (account as unknown as { strk20ShadowAccountCommitment?: (label: string, salt: string) => Promise<string> }).strk20ShadowAccountCommitment;
+        if (typeof shadowCommitment !== "function") throw new Error("SHADOW ACCOUNTS NEED A NEWER WALLET API.");
+        const commitment = await shadowCommitment.call(account, "BOOTY BANK", "0x0");
         const anonymizer = SHADOW_ANONYMIZER[nextSession.network];
         const classHashResult = await provider.callContract({
           contractAddress: anonymizer,
