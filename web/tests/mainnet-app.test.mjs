@@ -148,7 +148,7 @@ test("private actions run in one wallet step with honest waiting and failure sta
   assert.doesNotMatch(wallet, /strk20PrepareInvoke/);
   assert.doesNotMatch(wallet, /WALLET IS SIMULATING/);
   assert.doesNotMatch(wallet, /TWO WALLET STEPS/);
-  assert.match(wallet, /CHECK YOUR WALLET\. CONFIRM THE PROOF, THEN THE SHIELD TRANSACTION\./);
+  assert.match(wallet, /A SHIELD SETTLES AS TWO ONCHAIN TRANSACTIONS: TOKEN APPROVAL, THEN THE POOL DEPOSIT\./);
   assert.match(wallet, /STILL WAITING\? OPEN THE READY PANEL FROM THE EXTENSION BAR\./);
   assert.match(wallet, /WALLET DECLINED\. NOTHING WAS SUBMITTED\./);
   assert.match(wallet, /NOTHING WAS SUBMITTED\./);

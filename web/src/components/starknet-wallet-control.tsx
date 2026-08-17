@@ -665,7 +665,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     setPrivacyBusy(true);
     setPrivateTxHash("");
     setPrivacyStatus(action.type === "deposit"
-      ? "CHECK YOUR WALLET. CONFIRM THE PROOF, THEN THE SHIELD TRANSACTION."
+      ? "CHECK YOUR WALLET. CONFIRM THE PROOF, THEN THE SHIELD. A SHIELD SETTLES AS TWO ONCHAIN TRANSACTIONS: TOKEN APPROVAL, THEN THE POOL DEPOSIT."
       : "CHECK YOUR WALLET. CONFIRM THE PROOF, THEN THE TRANSACTION.");
     const waitHint = window.setTimeout(() => {
       setPrivacyStatus((current) => `${current} STILL WAITING? OPEN THE READY PANEL FROM THE EXTENSION BAR.`);
