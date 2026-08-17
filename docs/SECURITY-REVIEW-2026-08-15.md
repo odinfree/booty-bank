@@ -21,7 +21,7 @@ The review covered Cairo account authorization, browser wallet and quote paths, 
 
 No SQL injection, credential disclosure, cross-user wallet lookup, contract-caller account bypass, or deployed Falcon account was found.
 
-## Test gate
+## Test gate at review time
 
 - 28 Cairo tests pass.
 - 19 web tests pass.
@@ -32,6 +32,14 @@ No SQL injection, credential disclosure, cross-user wallet lookup, contract-call
 - Key rotation requires current-key authorization and proposed-key possession.
 - Credential versions, expiry, revocation, caller authorization, and verifier rotation have regression coverage.
 - Web and Worker production builds pass with zero dependency-audit findings.
+
+## Follow-up verification 2026-08-17
+
+- The web suite has expanded to 42 passing tests.
+- The Worker suite has expanded to 16 passing tests.
+- The final Mainnet wallet-state RCI pass closed stale private balances, cross-account receipt attribution, and the zero-STRK swap path.
+- `npm audit --omit=dev --audit-level=high` reports no high or critical findings in either package.
+- The web dependency tree currently reports ten moderate findings through Privy's transitive MetaMask `uuid` chain. The automated forced fix would install an older, breaking Privy release, so it was not applied without a tested upstream-compatible resolution.
 
 ## Open release gates
 
