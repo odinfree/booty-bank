@@ -133,10 +133,26 @@ test("STRK20 controls shield, transfer, and unshield selectable tokens through a
   assert.match(wallet, /privateSymbol/);
   assert.match(wallet, /CORE_TOKEN_REGISTRY\.map/);
   assert.match(wallet, /clearPrivateSessionState/);
-  assert.match(wallet, /prepared\.account !== accountRef\.current/);
-  assert.match(wallet, /strk20PrepareInvoke/);
   assert.match(wallet, /strk20InvokeTransaction/);
-  assert.match(wallet, /TWO WALLET STEPS/);
   assert.match(wallet, /SAVE THIS HASH FOR STRK20\.JSON/);
   assert.doesNotMatch(wallet, /void refreshPrivacy\(account, provider, nextSession, generation\)/);
+});
+
+test("private actions run in one wallet step with honest waiting and failure states", async () => {
+  const [wallet, launch] = await Promise.all([
+    source("../src/components/starknet-wallet-control.tsx"),
+    source("../src/app/app/privacy/page.tsx"),
+  ]);
+
+  // The wallet owns proving and approval: no app-side prepare leg, no silent hang.
+  assert.doesNotMatch(wallet, /strk20PrepareInvoke/);
+  assert.doesNotMatch(wallet, /WALLET IS SIMULATING/);
+  assert.doesNotMatch(wallet, /TWO WALLET STEPS/);
+  assert.match(wallet, /CHECK YOUR WALLET\. CONFIRM THE PROOF, THEN THE SHIELD TRANSACTION\./);
+  assert.match(wallet, /STILL WAITING\? OPEN THE READY PANEL FROM THE EXTENSION BAR\./);
+  assert.match(wallet, /WALLET DECLINED\. NOTHING WAS SUBMITTED\./);
+  assert.match(wallet, /NOTHING WAS SUBMITTED\./);
+  assert.match(wallet, /SHIELD IN WALLET/);
+  assert.match(wallet, /clearTimeout\(waitHint\)/);
+  assert.doesNotMatch(launch, /TWO WALLET STEPS/);
 });

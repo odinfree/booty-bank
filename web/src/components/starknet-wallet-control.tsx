@@ -18,13 +18,6 @@ type NativeSession = MainnetSessionSnapshot;
 type PrivateBalance = { symbol: CoreTokenSymbol; amount: string };
 type PrivateActionKind = "deposit" | "transfer" | "withdraw";
 type ShadowAccount = { address: string; balance: string; deployment: "deployed" | "undeployed" | "unknown" };
-type PreparedPrivateAction = {
-  account: WalletAccountV6;
-  accountAddress: string;
-  action: STRK20_ACTION;
-  chainLiteral: NativeSession["chainLiteral"];
-  generation: number;
-};
 type PreparedPublicTransfer = {
   account: WalletAccountV6;
   accountAddress: string;
@@ -171,7 +164,6 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   const walletEventCleanupRef = useRef<null | (() => void)>(null);
   const discoveryRefreshRef = useRef<null | (() => void)>(null);
   const privateOperationRef = useRef(false);
-  const preparedPrivateActionRef = useRef<PreparedPrivateAction | null>(null);
   const preparedPublicTransferRef = useRef<PreparedPublicTransfer | null>(null);
   const preparedAvnuSwapRef = useRef<PreparedAvnuSwap | null>(null);
   const sessionGenerationRef = useRef(0);
@@ -190,13 +182,10 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
   const [privateSymbol, setPrivateSymbol] = useState<PrivateBalance["symbol"]>("STRK");
   const [privateAmount, setPrivateAmount] = useState("1");
   const [privateRecipient, setPrivateRecipient] = useState("");
-  const [privatePreviewed, setPrivatePreviewed] = useState(false);
   const [privateTxHash, setPrivateTxHash] = useState("");
   const [shadow, setShadow] = useState<ShadowAccount | null>(null);
 
   const resetPrivatePreview = useCallback(() => {
-    preparedPrivateActionRef.current = null;
-    setPrivatePreviewed(false);
     setPrivateTxHash("");
   }, []);
 
@@ -210,11 +199,9 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
 
   const clearPrivateSessionState = useCallback(() => {
     privateOperationRef.current = false;
-    preparedPrivateActionRef.current = null;
     setPrivateBalances([]);
     setShadow(null);
     setPrivacyBusy(false);
-    setPrivatePreviewed(false);
     setPrivateTxHash("");
     setPrivacySupported(false);
     setPrivacyStatus("CONNECT A STRK20 WALLET.");
@@ -662,7 +649,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     }) as STRK20_ACTION;
   }
 
-  async function previewPrivateAction() {
+  async function runPrivateAction() {
     const account = accountRef.current;
     const currentSession = session;
     if (!account || !currentSession || privateOperationRef.current) return;
@@ -676,66 +663,28 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     privateOperationRef.current = true;
     const generation = sessionGenerationRef.current;
     setPrivacyBusy(true);
-    setPrivacyStatus("WALLET IS SIMULATING. NO PROOF OR TRANSACTION YET…");
+    setPrivateTxHash("");
+    setPrivacyStatus(action.type === "deposit"
+      ? "CHECK YOUR WALLET. CONFIRM THE PROOF, THEN THE SHIELD TRANSACTION."
+      : "CHECK YOUR WALLET. CONFIRM THE PROOF, THEN THE TRANSACTION.");
+    const waitHint = window.setTimeout(() => {
+      setPrivacyStatus((current) => `${current} STILL WAITING? OPEN THE READY PANEL FROM THE EXTENSION BAR.`);
+    }, 45_000);
     try {
-      await account.strk20PrepareInvoke([action], true);
-      if (generation !== sessionGenerationRef.current || accountRef.current !== account) throw new Error("WALLET CHANGED. PREVIEW AGAIN.");
-      preparedPrivateActionRef.current = {
-        account,
-        accountAddress: currentSession.address,
-        action,
-        chainLiteral: currentSession.chainLiteral,
-        generation,
-      };
-      setPrivatePreviewed(true);
-      setPrivacyStatus("PREVIEW PASSED. WALLET APPROVAL IS NEXT.");
+      const result = await account.strk20InvokeTransaction([action]);
+      if (generation !== sessionGenerationRef.current || accountRef.current !== account) return;
+      setPrivateTxHash(result.transaction_hash);
+      setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON.");
+      if (providerRef.current) await refreshPrivacy(account, providerRef.current, currentSession, generation);
     } catch (error) {
       if (generation !== sessionGenerationRef.current || accountRef.current !== account) return;
-      setPrivatePreviewed(false);
-      setPrivacyStatus(errorLabel(error, "PRIVATE PREVIEW FAILED."));
+      const message = error instanceof Error ? error.message : String(error);
+      setPrivacyStatus(/reject|refus|denied|cancel|abort/i.test(message)
+        ? "WALLET DECLINED. NOTHING WAS SUBMITTED."
+        : errorLabel(error, "PRIVATE TRANSACTION FAILED. NOTHING WAS SUBMITTED."));
     } finally {
+      window.clearTimeout(waitHint);
       if (generation === sessionGenerationRef.current && accountRef.current === account) {
-        privateOperationRef.current = false;
-        setPrivacyBusy(false);
-      }
-    }
-  }
-
-  async function submitPrivateAction() {
-    const prepared = preparedPrivateActionRef.current;
-    if (!prepared || !session || !privatePreviewed || privateOperationRef.current) return;
-    if (
-      prepared.generation !== sessionGenerationRef.current
-      || prepared.account !== accountRef.current
-      || tokenKey(prepared.accountAddress) !== tokenKey(session.address)
-      || prepared.chainLiteral !== session.chainLiteral
-    ) {
-      resetPrivatePreview();
-      setPrivacyStatus("WALLET CHANGED. PREVIEW AGAIN.");
-      return;
-    }
-    privateOperationRef.current = true;
-    setPrivacyBusy(true);
-    setPrivacyStatus(prepared.action.type === "deposit"
-      ? "TWO WALLET STEPS: APPROVE TOKEN, THEN APPROVE SHIELDING. PROOF GENERATION CAN TAKE TIME…"
-      : "APPROVE IN WALLET. PROOF GENERATION CAN TAKE TIME…");
-    try {
-      const result = await prepared.account.strk20InvokeTransaction([prepared.action]);
-      if (
-        prepared.generation !== sessionGenerationRef.current
-        || prepared.account !== accountRef.current
-        || session.chainLiteral !== prepared.chainLiteral
-      ) return;
-      setPrivateTxHash(result.transaction_hash);
-      preparedPrivateActionRef.current = null;
-      setPrivatePreviewed(false);
-      setPrivacyStatus("POOL TRANSACTION SUBMITTED. SAVE THIS HASH FOR STRK20.JSON.");
-      if (providerRef.current) await refreshPrivacy(prepared.account, providerRef.current, session, prepared.generation);
-    } catch (error) {
-      if (prepared.generation !== sessionGenerationRef.current || prepared.account !== accountRef.current) return;
-      setPrivacyStatus(errorLabel(error, "PRIVATE TRANSACTION FAILED."));
-    } finally {
-      if (prepared.generation === sessionGenerationRef.current && prepared.account === accountRef.current) {
         privateOperationRef.current = false;
         setPrivacyBusy(false);
       }
@@ -812,7 +761,7 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
           <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}>{CORE_TOKEN_REGISTRY.map((token) => <option value={token.symbol} key={token.symbol}>{token.symbol}</option>)}</select></label>
           <label><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /><small>PUBLIC / {session.assets.find((asset) => asset.symbol === privateSymbol)?.amount ?? "—"} {privateSymbol} · PRIVATE / {privateBalances.find((balance) => balance.symbol === privateSymbol)?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small></label>
           {privateKind !== "deposit" && <label><span>{privateKind === "transfer" ? "PRIVATE RECIPIENT" : "PUBLIC RECIPIENT"}</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
-          {!privatePreviewed ? <button className="wallet-rail-action" onClick={previewPrivateAction} disabled={privacyBusy || !privacySupported}>PREVIEW PRIVATE ACTION ↗</button> : <button className="wallet-rail-action private-confirm" onClick={submitPrivateAction} disabled={privacyBusy || !privacySupported}>CONFIRM IN WALLET ↗</button>}
+          <button className="wallet-rail-action private-confirm" onClick={runPrivateAction} disabled={privacyBusy || !privacySupported}>{privateKind === "deposit" ? "SHIELD IN WALLET ↗" : privateKind === "transfer" ? "SEND IN WALLET ↗" : "UNSHIELD IN WALLET ↗"}</button>
           <p className="privacy-wallet-status" aria-live="polite">{privacyStatus}</p>
           {privateTxHash && <a className="privacy-tx-link" href={explorerTransactionUrl(session.network, privateTxHash)} target="_blank" rel="noreferrer">VIEW ON {explorerName(session.network)} ↗</a>}
           {shadow && <div className="shadow-account-card"><span>BOOTY BANK SHADOW / 00</span><b>{shortAddress(shadow.address)}</b><small>{shadow.deployment === "deployed" ? "DEPLOYED" : shadow.deployment === "undeployed" ? "FUNDABLE BEFORE DEPLOYMENT" : "DEPLOYMENT NOT VERIFIED"} / {shadow.balance} STRK</small></div>}
