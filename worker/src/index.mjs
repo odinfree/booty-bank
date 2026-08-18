@@ -3,7 +3,7 @@ import { PrivyClient } from "@privy-io/node";
 const PUBLIC_ORIGINS = new Set([
   "https://bootybank.app",
   "https://www.bootybank.app",
-  "https://welttowelt.github.io",
+  "https://odinfree.github.io",
 ]);
 const LOCAL_ORIGINS = new Set([
   "http://localhost:3000",

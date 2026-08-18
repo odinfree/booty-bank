@@ -157,11 +157,11 @@ test("answers allowed CORS preflight with authorization enabled", async () => {
   const { env } = mockEnv();
   const request = new Request("https://bootybank.app/api/wallet/starknet", {
     method: "OPTIONS",
-    headers: { Origin: "https://welttowelt.github.io" },
+    headers: { Origin: "https://odinfree.github.io" },
   });
   const response = await handleRequest(request, env);
   assert.equal(response.status, 204);
-  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://welttowelt.github.io");
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://odinfree.github.io");
   assert.match(response.headers.get("Access-Control-Allow-Headers"), /Authorization/);
 });
 
