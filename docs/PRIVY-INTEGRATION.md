@@ -15,7 +15,7 @@ Without a public Privy App ID, the interface intentionally renders the labelled 
 
 1. Create the Booty Bank app in the Privy dashboard.
 2. Enable Google and email authentication.
-3. Add `https://bootybank.app`, `https://www.bootybank.app`, `https://welttowelt.github.io`, `http://localhost:3000`, and `http://127.0.0.1:3000` as allowed origins.
+3. Add `https://bootybank.app`, `https://www.bootybank.app`, `https://odinfree.github.io`, `http://localhost:3000`, and `http://127.0.0.1:3000` as allowed origins.
 4. Enable passkey or authenticator MFA before wallet signing is introduced. Google or email login alone must not authorize money movement.
 5. Copy the public App ID and optional Client ID into GitHub Actions repository variables:
    - `NEXT_PUBLIC_PRIVY_APP_ID`
