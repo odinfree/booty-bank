@@ -10,6 +10,9 @@ const LOCAL_ORIGINS = new Set([
   "http://127.0.0.1:3000",
 ]);
 const AVNU_SEPOLIA_PAYMASTER_URL = "https://sepolia.paymaster.avnu.fi";
+const STARK_FIELD_PRIME = (BigInt(2) ** BigInt(251)) + (BigInt(17) * (BigInt(2) ** BigInt(192))) + BigInt(1);
+const SIGNING_CHALLENGE_TTL_SECONDS = 5 * 60;
+const SIGNING_CHALLENGE_PURPOSE = "bootybank-session-proof";
 const PAYMASTER_METHODS = new Set([
   "paymaster_isAvailable",
   "paymaster_getSupportedTokens",
@@ -101,9 +104,127 @@ async function authenticatePrivy(request, env, services) {
     const client = (services.createPrivyClient ?? createPrivyClient)(env);
     const claims = await client.utils().auth().verifyAccessToken(token);
     if (!claims?.user_id) throw new Error("missing user id");
-    return { client, userId: claims.user_id };
+    return { client, token, userId: claims.user_id };
   } catch {
     return { error: "INVALID SESSION.", status: 401 };
+  }
+}
+
+function normalizeStarkHash(value) {
+  if (typeof value !== "string" || !/^0x[0-9a-fA-F]{1,64}$/.test(value)) return null;
+  try {
+    const felt = BigInt(value);
+    if (felt <= BigInt(0) || felt >= STARK_FIELD_PRIME) return null;
+    return `0x${felt.toString(16)}`;
+  } catch {
+    return null;
+  }
+}
+
+function randomChallengeHash(services) {
+  if (services.randomChallengeHash) return services.randomChallengeHash();
+  const bytes = new Uint8Array(31);
+  do {
+    crypto.getRandomValues(bytes);
+  } while (bytes.every((byte) => byte === 0));
+  return `0x${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function requestNowSeconds(services) {
+  const milliseconds = services.now ? services.now() : Date.now();
+  return Math.floor(milliseconds / 1000);
+}
+
+async function enforcePrivyRateLimit(env, key) {
+  if (!env.WAITLIST_RATE_LIMITER) return true;
+  const { success } = await env.WAITLIST_RATE_LIMITER.limit({ key });
+  return success;
+}
+
+async function handlePrivySigningChallenge(request, env, origin, services) {
+  const auth = await authenticatePrivy(request, env, services);
+  if (auth.error) return json({ message: auth.error }, auth.status, origin);
+  if (!(await enforcePrivyRateLimit(env, `privy-challenge:${auth.userId}`))) {
+    return json({ message: "TOO MANY SIGNING REQUESTS. TRY AGAIN LATER." }, 429, origin);
+  }
+
+  const wallet = await walletRecord(env, auth.userId);
+  if (!wallet) return json({ message: "CREATE YOUR STARKNET ACCOUNT FIRST." }, 409, origin);
+
+  const now = requestNowSeconds(services);
+  const challengeId = services.randomUUID ? services.randomUUID() : crypto.randomUUID();
+  const hash = normalizeStarkHash(randomChallengeHash(services));
+  if (!hash) return json({ message: "SIGNING CHALLENGE UNAVAILABLE." }, 503, origin);
+
+  try {
+    await env.WAITLIST_DB
+      .prepare("DELETE FROM privy_signing_challenges WHERE expires_at < ? OR (consumed_at IS NOT NULL AND consumed_at < ?)")
+      .bind(now, now - 86_400)
+      .run();
+    await env.WAITLIST_DB
+      .prepare("INSERT INTO privy_signing_challenges (challenge_id, user_id, wallet_id, challenge_hash, expires_at) VALUES (?, ?, ?, ?, ?)")
+      .bind(challengeId, auth.userId, wallet.wallet_id, hash, now + SIGNING_CHALLENGE_TTL_SECONDS)
+      .run();
+    return json({ challengeId, expiresAt: now + SIGNING_CHALLENGE_TTL_SECONDS, hash, purpose: SIGNING_CHALLENGE_PURPOSE }, 201, origin);
+  } catch {
+    return json({ message: "SIGNING CHALLENGE UNAVAILABLE." }, 503, origin);
+  }
+}
+
+function signingRequest(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const keys = Object.keys(body).sort();
+  if (keys.join(",") !== "challengeId,hash,purpose,walletId") return null;
+  if (body.purpose !== SIGNING_CHALLENGE_PURPOSE) return null;
+  if (typeof body.challengeId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.challengeId)) return null;
+  if (typeof body.walletId !== "string" || body.walletId.length < 1 || body.walletId.length > 200) return null;
+  const hash = normalizeStarkHash(body.hash);
+  return hash ? { challengeId: body.challengeId, hash, walletId: body.walletId } : null;
+}
+
+async function handlePrivySign(request, env, origin, services) {
+  const auth = await authenticatePrivy(request, env, services);
+  if (auth.error) return json({ message: auth.error }, auth.status, origin);
+  if (!(await enforcePrivyRateLimit(env, `privy-sign:${auth.userId}`))) {
+    return json({ message: "TOO MANY SIGNING REQUESTS. TRY AGAIN LATER." }, 429, origin);
+  }
+
+  const parsed = await parseJsonBody(request, 2_048);
+  if (parsed.error) return json({ message: parsed.error }, parsed.status, origin);
+  const input = signingRequest(parsed.body);
+  if (!input) return json({ message: "SIGNING REQUEST NOT ALLOWED." }, 400, origin);
+
+  const wallet = await walletRecord(env, auth.userId);
+  if (!wallet || wallet.wallet_id !== input.walletId) {
+    return json({ message: "WALLET DOES NOT BELONG TO THIS SESSION." }, 403, origin);
+  }
+
+  const now = requestNowSeconds(services);
+  const consumed = await env.WAITLIST_DB
+    .prepare("UPDATE privy_signing_challenges SET consumed_at = ? WHERE challenge_id = ? AND user_id = ? AND wallet_id = ? AND challenge_hash = ? AND consumed_at IS NULL AND expires_at >= ?")
+    .bind(now, input.challengeId, auth.userId, input.walletId, input.hash, now)
+    .run();
+  const changes = Number(consumed?.meta?.changes ?? consumed?.changes ?? 0);
+  if (changes !== 1) return json({ message: "SIGNING CHALLENGE EXPIRED OR ALREADY USED." }, 409, origin);
+
+  try {
+    const result = await auth.client.wallets().rawSign(input.walletId, {
+      authorization_context: { user_jwts: [auth.token] },
+      idempotency_key: input.challengeId,
+      params: { hash: input.hash },
+      request_expiry: Date.now() + 30_000,
+    });
+    if (typeof result?.signature !== "string" || !/^(0x)?[0-9a-fA-F]{128}$/.test(result.signature)) {
+      throw new Error("invalid signature response");
+    }
+    return json({ signature: result.signature }, 200, origin);
+  } catch (error) {
+    console.error(JSON.stringify({
+      error: error instanceof Error ? error.message : "unknown Privy error",
+      message: "Privy ownership proof failed",
+      userId: auth.userId,
+    }));
+    return json({ message: "PRIVY SIGNING TEMPORARILY UNAVAILABLE." }, 503, origin);
   }
 }
 
@@ -238,17 +359,21 @@ export async function handleRequest(request, env, services = {}) {
     });
   }
 
-  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet" || url.pathname === "/api/paymaster";
+  const isPrivyChallenge = url.pathname === "/api/wallet/starknet/challenge";
+  const isPrivySign = url.pathname === "/api/wallet/starknet/sign";
+  const isApiPath = url.pathname === "/api/waitlist" || url.pathname === "/api/wallet/starknet" || isPrivyChallenge || isPrivySign || url.pathname === "/api/paymaster";
   if (!isApiPath) return json({ message: "NOT FOUND." }, 404, null);
   const localRequest = url.hostname === "localhost" || url.hostname === "127.0.0.1";
   const originAllowed = !origin || PUBLIC_ORIGINS.has(origin) || (localRequest && LOCAL_ORIGINS.has(origin));
   if (!originAllowed) return json({ message: "ORIGIN NOT ALLOWED." }, 403, null);
-  if (url.pathname === "/api/paymaster" && !origin) return json({ message: "ORIGIN REQUIRED." }, 403, null);
+  if ((url.pathname === "/api/paymaster" || isPrivyChallenge || isPrivySign) && !origin) return json({ message: "ORIGIN REQUIRED." }, 403, null);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (request.method !== "POST") return json({ message: "METHOD NOT ALLOWED." }, 405, origin);
 
   if (url.pathname === "/api/waitlist") return handleWaitlist(request, env, origin);
   if (url.pathname === "/api/paymaster") return handleAvnuPaymaster(request, env, origin, services);
+  if (isPrivyChallenge) return handlePrivySigningChallenge(request, env, origin, services);
+  if (isPrivySign) return handlePrivySign(request, env, origin, services);
   return handlePrivyWallet(request, env, origin, services);
 }
 

@@ -87,7 +87,12 @@ test("Privy social login is live only when configured and otherwise stays an hon
   assert.match(placeholder, /EMAIL/);
   assert.match(placeholder, /NO ACCOUNT CREATED/);
   assert.match(placeholder, /getAccessToken/);
-  assert.match(placeholder, /CREATE STARKNET ACCOUNT/);
+  assert.match(placeholder, /CONNECT STARKNET ACCOUNT/);
+  assert.match(placeholder, /OnboardStrategy\.Privy/);
+  assert.match(placeholder, /new PrivySigner/);
+  assert.match(placeholder, /bootybank-session-proof/);
+  assert.match(placeholder, /SIGNING IS LIMITED TO A FRESH OWNERSHIP PROOF/);
+  assert.match(placeholder, /wallet\.accountAddress/);
   assert.match(placeholder, /ACCOUNT NOT DEPLOYED/);
   assert.match(providers, /<PrivyProvider/);
   assert.match(providers, /loginMethods: \["google", "email"\]/);

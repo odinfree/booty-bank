@@ -6,6 +6,7 @@ import { handleRequest, normalizeEmail } from "../src/index.mjs";
 function mockEnv({ configured = true, avnuConfigured = true } = {}) {
   const inserted = [];
   const wallets = new Map();
+  const challenges = new Map();
   const env = {
     ...(configured ? { PRIVY_APP_ID: "app_test", PRIVY_APP_SECRET: "secret_test" } : {}),
     ...(avnuConfigured ? { AVNU_API_KEY: "avnu_test_secret" } : {}),
@@ -33,7 +34,36 @@ function mockEnv({ configured = true, avnuConfigured = true } = {}) {
                     public_key: values[3],
                   });
                 }
-                return { success: true };
+                if (sql.startsWith("INSERT INTO privy_signing_challenges")) {
+                  challenges.set(values[0], {
+                    challenge_id: values[0],
+                    user_id: values[1],
+                    wallet_id: values[2],
+                    challenge_hash: values[3],
+                    expires_at: values[4],
+                    consumed_at: null,
+                  });
+                }
+                if (sql.startsWith("DELETE FROM privy_signing_challenges")) {
+                  for (const [challengeId, challenge] of challenges) {
+                    if (challenge.expires_at < values[0] || (challenge.consumed_at !== null && challenge.consumed_at < values[1])) {
+                      challenges.delete(challengeId);
+                    }
+                  }
+                }
+                if (sql.startsWith("UPDATE privy_signing_challenges")) {
+                  const [consumedAt, challengeId, userId, walletId, hash, minimumExpiry] = values;
+                  const challenge = challenges.get(challengeId);
+                  const allowed = challenge
+                    && challenge.user_id === userId
+                    && challenge.wallet_id === walletId
+                    && challenge.challenge_hash === hash
+                    && challenge.consumed_at === null
+                    && challenge.expires_at >= minimumExpiry;
+                  if (allowed) challenge.consumed_at = consumedAt;
+                  return { success: true, meta: { changes: allowed ? 1 : 0 } };
+                }
+                return { success: true, meta: { changes: 0 } };
               },
             };
           },
@@ -41,11 +71,12 @@ function mockEnv({ configured = true, avnuConfigured = true } = {}) {
       },
     },
   };
-  return { env, inserted, wallets };
+  return { challenges, env, inserted, wallets };
 }
 
 function mockPrivy({ userId = "did:privy:user-1" } = {}) {
   const created = [];
+  const signed = [];
   const client = {
     utils() {
       return {
@@ -69,10 +100,14 @@ function mockPrivy({ userId = "did:privy:user-1" } = {}) {
             public_key: "0x456",
           };
         },
+        async rawSign(walletId, input) {
+          signed.push({ input, walletId });
+          return { signature: "ab".repeat(64) };
+        },
       };
     },
   };
-  return { client, created, services: { createPrivyClient: () => client } };
+  return { client, created, signed, services: { createPrivyClient: () => client } };
 }
 
 function walletRequest(path, body, token = "valid-token") {
@@ -231,10 +266,72 @@ test("creates one owner-bound Privy Starknet wallet and reuses it", async () => 
   assert.equal((await second.json()).walletId, "wallet_123");
 });
 
-test("raw signing is not exposed to browsers", async () => {
+test("raw signing is limited to an authenticated single-use ownership challenge", async () => {
   const { env } = mockEnv();
-  const response = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_123", hash: "0xa" }), env, mockPrivy().services);
-  assert.equal(response.status, 404);
+  const privy = mockPrivy();
+  const services = {
+    ...privy.services,
+    now: () => 1_800_000_000_000,
+    randomChallengeHash: () => "0xabc",
+    randomUUID: () => "11111111-1111-4111-8111-111111111111",
+  };
+  await handleRequest(walletRequest("/api/wallet/starknet", {}), env, services);
+
+  const challengeResponse = await handleRequest(walletRequest("/api/wallet/starknet/challenge", {}), env, services);
+  assert.equal(challengeResponse.status, 201);
+  const challenge = await challengeResponse.json();
+  assert.equal(challenge.hash, "0xabc");
+  assert.equal(challenge.purpose, "bootybank-session-proof");
+
+  const body = {
+    challengeId: challenge.challengeId,
+    hash: challenge.hash,
+    purpose: challenge.purpose,
+    walletId: "wallet_123",
+  };
+  const signResponse = await handleRequest(walletRequest("/api/wallet/starknet/sign", body), env, services);
+  assert.equal(signResponse.status, 200);
+  assert.equal((await signResponse.json()).signature, "ab".repeat(64));
+  assert.equal(privy.signed.length, 1);
+  assert.deepEqual(privy.signed[0].input.authorization_context, { user_jwts: ["valid-token"] });
+  assert.equal(privy.signed[0].input.idempotency_key, challenge.challengeId);
+
+  const replay = await handleRequest(walletRequest("/api/wallet/starknet/sign", body), env, services);
+  assert.equal(replay.status, 409);
+  assert.equal(privy.signed.length, 1);
+});
+
+test("rejects arbitrary hashes, wallet substitution, and the old raw-sign route", async () => {
+  const { env } = mockEnv();
+  const privy = mockPrivy();
+  const services = {
+    ...privy.services,
+    now: () => 1_800_000_000_000,
+    randomChallengeHash: () => "0xabc",
+    randomUUID: () => "11111111-1111-4111-8111-111111111111",
+  };
+  await handleRequest(walletRequest("/api/wallet/starknet", {}), env, services);
+  const challenge = await (await handleRequest(walletRequest("/api/wallet/starknet/challenge", {}), env, services)).json();
+
+  const arbitrary = await handleRequest(walletRequest("/api/wallet/starknet/sign", {
+    challengeId: challenge.challengeId,
+    hash: "0xdef",
+    purpose: challenge.purpose,
+    walletId: "wallet_123",
+  }), env, services);
+  assert.equal(arbitrary.status, 409);
+
+  const substituted = await handleRequest(walletRequest("/api/wallet/starknet/sign", {
+    challengeId: challenge.challengeId,
+    hash: challenge.hash,
+    purpose: challenge.purpose,
+    walletId: "wallet_attacker",
+  }), env, services);
+  assert.equal(substituted.status, 403);
+
+  const legacy = await handleRequest(walletRequest("/api/wallet/sign", { walletId: "wallet_123", hash: "0xa" }), env, services);
+  assert.equal(legacy.status, 404);
+  assert.equal(privy.signed.length, 0);
 });
 
 function paymasterRequest(body, extraHeaders = {}) {
