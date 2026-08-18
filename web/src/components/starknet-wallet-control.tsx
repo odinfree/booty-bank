@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcProvider, STRK20_ACTION, WalletAccountV6 } from "starknet";
 import { validateAvnuSwapCalls } from "../lib/avnu-policy.mjs";
 import { explorerAddressUrl, explorerName, explorerTransactionUrl } from "../lib/starknet-explorer.mjs";
-import { buildStrk20Action, formatTokenAmount, parseTokenAmount } from "../lib/strk20.mjs";
+import { buildStrk20Action, formatTokenAmount, parseTokenAmount, tokenBalancePercentage } from "../lib/strk20.mjs";
 import { assertStarkzapPreset, CORE_TOKEN_REGISTRY, validateSwapPair } from "../lib/token-registry.mjs";
 import type { CoreToken, CoreTokenSymbol } from "../lib/token-registry.mjs";
 import type { AvnuSwapCommands, AvnuSwapInput, AvnuSwapReview, MainnetAssetSnapshot, MainnetSessionSnapshot, PublicTransferCommands, PublicTransferInput, PublicTransferReview } from "./mainnet-account-context";
@@ -15,7 +15,7 @@ import PrivyPlaceholder from "./privy-placeholder";
 
 type NetworkName = "mainnet" | "sepolia";
 type NativeSession = MainnetSessionSnapshot;
-type PrivateBalance = { symbol: CoreTokenSymbol; amount: string };
+type PrivateBalance = { symbol: CoreTokenSymbol; amount: string; raw: string };
 type PrivateActionKind = "deposit" | "transfer" | "withdraw";
 type ShadowAccount = { address: string; balance: string; deployment: "deployed" | "undeployed" | "unknown" };
 type PreparedPublicTransfer = {
@@ -215,10 +215,14 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     try {
       const balances = await account.strk20Balances(nextSession.assets.map((asset) => asset.address));
       const byToken = new Map(balances.map((entry) => [tokenKey(entry.token), entry.balance]));
-      const nextBalances: PrivateBalance[] = nextSession.assets.map((asset) => ({
-        symbol: asset.symbol,
-        amount: formatTokenAmount(byToken.get(tokenKey(asset.address)) ?? "0x0", asset.decimals),
-      }));
+      const nextBalances: PrivateBalance[] = nextSession.assets.map((asset) => {
+        const raw = byToken.get(tokenKey(asset.address)) ?? "0x0";
+        return {
+          symbol: asset.symbol,
+          amount: formatTokenAmount(raw, asset.decimals),
+          raw: String(raw),
+        };
+      });
       let nextShadow: ShadowAccount | null = null;
       try {
         const { hash } = await import("starknet");
@@ -694,6 +698,24 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
     }
   }
 
+  const selectedPrivateAsset = session?.assets.find((asset) => asset.symbol === privateSymbol);
+  const selectedPrivateBalance = privateBalances.find((balance) => balance.symbol === privateSymbol);
+  const privateAmountSource = privateKind === "deposit" ? selectedPrivateAsset : selectedPrivateBalance;
+  const privateAmountSourceRaw = privateAmountSource?.raw ?? null;
+  const privateAmountSourceLabel = privateKind === "deposit" ? "PUBLIC AVAILABLE" : "PRIVATE AVAILABLE";
+  const privateAmountSourceValue = privateAmountSource?.amount ?? (privateKind === "deposit" ? "—" : "LOAD FROM WALLET");
+  const privateAmountSourceReady = privateAmountSourceRaw !== null && BigInt(privateAmountSourceRaw) > BigInt(0);
+
+  function fillPrivateAmount(percentage: number) {
+    if (!selectedPrivateAsset || !privateAmountSourceRaw) return;
+    try {
+      setPrivateAmount(tokenBalancePercentage(privateAmountSourceRaw, selectedPrivateAsset.decimals, percentage));
+      resetPrivatePreview();
+    } catch (error) {
+      setPrivacyStatus(errorLabel(error, "BALANCE PERCENTAGE IS UNAVAILABLE."));
+    }
+  }
+
   if (!session) {
     const recommendedWallets = RECOMMENDED_STARKNET_WALLETS.map((information) => ({
       information,
@@ -762,7 +784,15 @@ function NativeStarknetWallet({ requiredNetwork, onSessionChange, onSwapCommands
             <button className={privateKind === "withdraw" ? "active" : ""} onClick={() => { setPrivateKind("withdraw"); resetPrivatePreview(); }}>UNSHIELD</button>
           </div>
           <label><span>ASSET</span><select value={privateSymbol} onChange={(event) => { setPrivateSymbol(event.target.value as PrivateBalance["symbol"]); resetPrivatePreview(); }} disabled={privacyBusy}>{CORE_TOKEN_REGISTRY.map((token) => <option value={token.symbol} key={token.symbol}>{token.symbol}</option>)}</select></label>
-          <label><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={32} /><small>PUBLIC / {session.assets.find((asset) => asset.symbol === privateSymbol)?.amount ?? "—"} {privateSymbol} · PRIVATE / {privateBalances.find((balance) => balance.symbol === privateSymbol)?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small></label>
+          <label className="private-amount-field"><span>{privateSymbol} AMOUNT</span><input value={privateAmount} onChange={(event) => { setPrivateAmount(event.target.value); resetPrivatePreview(); }} inputMode="decimal" maxLength={48} />
+            <button type="button" className="private-balance-max" onClick={() => fillPrivateAmount(100)} disabled={privacyBusy || !privateAmountSourceReady} aria-label={`Use maximum ${privateAmountSourceLabel.toLowerCase()} ${privateSymbol} balance`}>
+              <span>{privateAmountSourceLabel}</span><b>{privateAmountSourceValue} {privateSymbol}</b><i>USE MAX ↗</i>
+            </button>
+            <div className="private-percentage-grid" aria-label={`${privateSymbol} balance shortcuts`}>
+              {[25, 50, 75, 100].map((percentage) => <button type="button" key={percentage} onClick={() => fillPrivateAmount(percentage)} disabled={privacyBusy || !privateAmountSourceReady} aria-label={`Use ${percentage} percent of ${privateAmountSourceLabel.toLowerCase()} ${privateSymbol} balance`}>{percentage === 100 ? "MAX" : `${percentage}%`}</button>)}
+            </div>
+            <small>PUBLIC / {selectedPrivateAsset?.amount ?? "—"} {privateSymbol} · PRIVATE / {selectedPrivateBalance?.amount ?? "LOAD FROM WALLET"} {privateSymbol}</small>
+          </label>
           {privateKind === "transfer" && <label><span>PRIVATE RECIPIENT</span><input className="address-input" value={privateRecipient} onChange={(event) => { setPrivateRecipient(event.target.value); resetPrivatePreview(); }} placeholder="0X…" spellCheck={false} /></label>}
           {privateKind === "withdraw" && <p className="privacy-wallet-status">UNSHIELDS TO YOUR CONNECTED WALLET / {shortAddress(session.address)}</p>}
           <button className="wallet-rail-action private-confirm" onClick={runPrivateAction} disabled={privacyBusy || !privacySupported}>{privateKind === "deposit" ? "SHIELD IN WALLET ↗" : privateKind === "transfer" ? "SEND IN WALLET ↗" : "UNSHIELD IN WALLET ↗"}</button>

@@ -258,6 +258,19 @@ main { min-height: 100vh; overflow: clip; }
 .wallet-rail-panel select { appearance: none; cursor: pointer; }
 .wallet-rail-panel label small { font-size: 8px; line-height: 1.35; }
 .wallet-rail-panel input.address-input { font-size: 12px; letter-spacing: -.01em; }
+.private-amount-field { gap: 0 !important; }
+.private-amount-field > span { margin-bottom: 7px; }
+.private-balance-max { min-width: 0; min-height: 48px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; border: 1px solid var(--ink); border-top: 0; padding: 0 10px; color: var(--ink); background: var(--green); cursor: pointer; text-align: left; }
+.private-balance-max span, .private-balance-max i { font-size: 8px; font-style: normal; font-weight: 700; }
+.private-balance-max b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: 11px; }
+.private-balance-max:hover:not(:disabled), .private-balance-max:focus-visible { color: var(--paper); background: var(--ink); }
+.private-balance-max:disabled { cursor: not-allowed; opacity: .5; }
+.private-percentage-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+.private-percentage-grid button { min-height: 36px; border: 0; border-right: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; font-size: 9px; font-weight: 700; }
+.private-percentage-grid button:last-child { border-right: 0; color: var(--paper); background: var(--ink); }
+.private-percentage-grid button:hover:not(:disabled), .private-percentage-grid button:focus-visible { color: var(--ink); background: var(--accent); }
+.private-percentage-grid button:disabled { cursor: not-allowed; opacity: .35; }
+.private-amount-field small { margin-top: 7px; }
 .wallet-rail-action { min-height: 44px; display: grid; place-items: center; width: 100%; border: 1px solid var(--ink); color: var(--paper); background: var(--ink); cursor: pointer; text-align: center; text-decoration: none; font-size: 9px; font-weight: 700; }
 .wallet-rail-action:hover { color: var(--ink); background: var(--accent); }
 .wallet-rail-action:disabled { cursor: wait; opacity: .55; }

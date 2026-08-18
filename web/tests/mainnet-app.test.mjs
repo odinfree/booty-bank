@@ -134,6 +134,10 @@ test("STRK20 controls shield, transfer, and unshield selectable tokens through a
   assert.match(wallet, /CORE_TOKEN_REGISTRY\.map/);
   assert.match(wallet, /clearPrivateSessionState/);
   assert.match(wallet, /strk20InvokeTransaction/);
+  assert.match(wallet, /tokenBalancePercentage/);
+  assert.match(wallet, /PUBLIC AVAILABLE/);
+  assert.match(wallet, /PRIVATE AVAILABLE/);
+  assert.match(wallet, /\[25, 50, 75, 100\]/);
   assert.match(wallet, /SAVE THIS HASH FOR STRK20\.JSON/);
   assert.doesNotMatch(wallet, /void refreshPrivacy\(account, provider, nextSession, generation\)/);
 });

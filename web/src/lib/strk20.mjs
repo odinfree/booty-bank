@@ -21,6 +21,16 @@ export function formatTokenAmount(rawValue, decimals, maximumFractionDigits = 4)
   return fraction ? `${whole}.${fraction}` : whole.toString();
 }
 
+export function tokenBalancePercentage(rawValue, decimals, percentage) {
+  if (!Number.isInteger(percentage) || percentage < 1 || percentage > 100) {
+    throw new Error("CHOOSE A BALANCE PERCENTAGE FROM 1 TO 100.");
+  }
+  const raw = BigInt(rawValue);
+  const selected = raw * BigInt(percentage) / 100n;
+  if (selected <= 0n) throw new Error("BALANCE IS TOO LOW FOR THAT PERCENTAGE.");
+  return formatTokenAmount(selected, decimals, decimals);
+}
+
 export function buildStrk20Action({ kind, token, amount, recipient, decimals }) {
   const rawAmount = parseTokenAmount(amount, decimals);
   if (kind === "deposit") return { type: "deposit", token, amount: rawAmount };
